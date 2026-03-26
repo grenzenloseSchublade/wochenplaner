@@ -1,0 +1,18 @@
+[
+  {
+    "id": "2ab290dd-0af4-4772-9cf5-36d1a03884cf",
+    "name": "Laufen",
+    "day": "Montag",
+    "start": "07:00",
+    "end": "08:30",
+    "color": "#F3E5AB"
+  },
+  {
+    "id": "0a1998ae-71d0-4c20-bac9-014d19f9abbe",
+    "name": "Laufen",
+    "day": "Mittwoch",
+    "start": "07:00",
+    "end": "08:30",
+    "color": "#F3E5AB"
+  }
+]
