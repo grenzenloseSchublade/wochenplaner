@@ -1,18 +1,12 @@
-# Python
+.git/
 .venv/
 __pycache__/
 *.pyc
 *.pyo
-*.pyd
+.ruff_cache/
 .pytest_cache/
-*.egg-info/
-
-# Laufzeit-Daten (nicht in Image)
 data/wochenplan.json
-exports/
-
-# Generierte Dateien
-*.pdf
+data/plans/*.pdf
 
 # IDE / OS
 .git/

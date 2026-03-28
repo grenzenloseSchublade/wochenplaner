@@ -2,17 +2,14 @@
 .venv/
 __pycache__/
 *.pyc
+.ruff_cache/
 
 # Laufzeit-Daten
 data/wochenplan.json
-exports/
-*.pdf
+data/plans/*.pdf
 
 # IDE / OS
 .DS_Store
 *.swp
 .idea/
 .vscode/settings.json
-
-# uv.lock NICHT ignorieren → reproduzierbare Builds!
-# !uv.lock  ← bereits nicht in der Liste, also korrekt
