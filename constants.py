@@ -11,7 +11,6 @@ WOCHENTAGE = [
     "Samstag",
     "Sonntag",
 ]
-WOCHENTAGE_KURZ = ["Mo", "Di", "Mi", "Do", "Fr", "Sa", "So"]
 
 AKTIVITAETEN_FARBEN: dict[str, str] = {
     "Arbeit": "#F3E5AB",

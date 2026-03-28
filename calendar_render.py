@@ -6,7 +6,8 @@ from pathlib import Path
 
 import streamlit as st
 
-from constants import PX_PER_MIN, WOCHENTAGE, WOCHENTAGE_KURZ
+from constants import PX_PER_MIN, WOCHENTAGE
+from i18n import WOCHENTAGE_KURZ_I18N, Lang
 from utils import Activity, darken, get_text_color, t2m, validate_color
 
 _STATIC_DIR = Path(__file__).parent / "static"
@@ -110,6 +111,7 @@ def render_calendar(
     sh: int,
     eh: int,
     _today: str = "",
+    lang: Lang = "de",
 ) -> str:
     acts: list[dict] = json.loads(activities_json)
     css = _load_css()
@@ -117,9 +119,10 @@ def render_calendar(
     abs_start = sh * 60
     labels = _time_labels(sh, eh, abs_start)
     grid = _grid_lines(sh, eh, abs_start)
+    short_days = WOCHENTAGE_KURZ_I18N[lang]
 
     day_cols = ""
-    for di, (tag, tk) in enumerate(zip(WOCHENTAGE, WOCHENTAGE_KURZ, strict=True)):
+    for di, (tag, tk) in enumerate(zip(WOCHENTAGE, short_days, strict=True)):
         day_acts = [a for a in acts if a.get("day") == tag]
         blocks = "".join(_activity_block(a, abs_start, eh) for a in day_acts)
         hdr_cls = "cal-hdr-we" if di >= 5 else "cal-hdr-wk"

@@ -10,7 +10,8 @@ from reportlab.lib.pagesizes import A4, A5, landscape
 from reportlab.lib.units import mm
 from reportlab.pdfgen import canvas
 
-from constants import WOCHENTAGE, WOCHENTAGE_KURZ
+from constants import WOCHENTAGE
+from i18n import WOCHENTAGE_KURZ_I18N, Lang, t
 
 
 def _hex_to_color(hex_str: str) -> Color:
@@ -31,6 +32,7 @@ def generate_pdf(
     start_hour: int = 6,
     end_hour: int = 22,
     title: str = "Wochenplan",
+    lang: Lang = "de",
 ) -> bytes:
     page_size = landscape(A4) if paper_format == "A4" else landscape(A5)
     page_w, page_h = page_size
@@ -66,7 +68,8 @@ def generate_pdf(
 
     # ── Tagesheader ──────────────────────────────────────────────────────────
     header_y = grid_y + grid_h
-    for i, tag in enumerate(WOCHENTAGE_KURZ):
+    short_days = WOCHENTAGE_KURZ_I18N[lang]
+    for i, tag in enumerate(short_days):
         x = grid_x + i * col_w
         bg = HexColor("#4472C4") if i < 5 else HexColor("#2E86AB")
         c.setFillColor(bg)
@@ -176,7 +179,7 @@ def generate_pdf(
     # ── Footer ───────────────────────────────────────────────────────────────
     c.setFillColor(HexColor("#AAAAAA"))
     c.setFont("Helvetica", 5)
-    c.drawRightString(page_w - mg_r, mg_b / 2, "Wochenplaner – lokal generiert")
+    c.drawRightString(page_w - mg_r, mg_b / 2, t("pdf_footer", lang))
 
     c.save()
     buf.seek(0)

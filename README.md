@@ -1,108 +1,132 @@
-# Wochenplaner
+# Wochenplaner / Weekly Planner
 
-Lokale Streamlit-App für einen **visuell proportionalen** Wochenplan
-mit direktem **PDF-Export** (DIN A4 / A5 Querformat).
+Kostenloser visueller Wochenplaner mit **PDF-Export** und **CSV-Export** –
+ohne Anmeldung, ohne Tracking, Open Source.
+
+Free visual weekly schedule planner with **PDF export** and **CSV export** –
+no account, no tracking, open source.
+
+> **Kostenlose Alternative zu tryschedule.com** – PDF-Export dort ab $4.90/Woche,
+> hier komplett gratis.
 
 ---
 
-## Schnellstart (mit `uv`)
+## Schnellstart / Quick Start
 
 ```bash
-# 1. Abhängigkeiten installieren
+# Abhängigkeiten installieren / Install dependencies
 uv sync
 
-# 2. App starten
+# App starten / Start app
 uv run streamlit run app.py
 ```
 
 Öffnet automatisch http://localhost:8501 im Browser.
+Opens http://localhost:8501 in your browser automatically.
+
+### Deployment auf Streamlit Community Cloud
+
+1. Repository auf GitHub pushen
+2. [share.streamlit.io](https://share.streamlit.io) → „New app" → Repository auswählen
+3. Main file: `app.py`
+4. Fertig – `uv.lock` und `.python-version` werden automatisch erkannt
 
 ---
 
 ## Features
 
-| Feature | Beschreibung |
-|---|---|
-| **Proportionale Zeitblöcke** | 4h-Block ist doppelt so groß wie 2h-Block |
-| **Aktivitäten bearbeiten** | Einträge per Bearbeiten-Button anpassen, nicht nur löschen |
-| **Eigene Aktivitäten** | Neben vordefinierten auch eigene Aktivitätsnamen anlegen |
-| **Überlappungswarnung** | Zeitkonflikte werden erkannt; Speichern ist optional trotzdem möglich |
-| **Farb-Picker** | Freie Farbwahl, Schrift automatisch kontrastoptimiert |
-| **15-Minuten-Raster** | Feinere Zeitplanung im Viertelstundentakt |
-| **Sortierte Einträge** | Aktivitäten nach Tag und Uhrzeit sortiert angezeigt |
-| **Wochenplan-Import** | JSON-Dateien aus `data/` per Dropdown laden |
-| **JSON-Upload** | Externe JSON-Dateien direkt per Datei-Upload importieren |
-| **Export mit Dateiname** | Pläne unter eigenem Namen speichern (z. B. `2026-03-18_arbeitswoche.json`) |
-| **PDF-Export + Download** | DIN A4 oder A5 Querformat, Titel zentriert, direkter Download |
-| **CSV-Export** | Wochenplan als CSV für Tabellenkalkulationen exportieren |
-| **Zeitbereich** | Frei einstellbar (Standard: 06:00–22:00) |
-| **Statistik-Tab** | Zeitverteilung pro Aktivität als Balkendiagramm mit Gesamtstunden |
-| **Datenpersistenz** | Alle Daten lokal in `data/*.json` |
+| Feature | DE | EN |
+|---|---|---|
+| **Proportionale Zeitblöcke** | 4h-Block doppelt so groß wie 2h | 4h block twice as tall as 2h |
+| **PDF-Export (kostenlos)** | DIN A4 / A5 Querformat | DIN A4 / A5 landscape |
+| **CSV-Export** | Für Excel / Google Sheets | For Excel / Google Sheets |
+| **Zweisprachig** | Deutsch + Englisch | German + English |
+| **Vorlagen** | Student, Fitness, Büro, Schichtplan | Student, Fitness, Office, Shift |
+| **Plan teilen** | Per URL-Link (kein Backend) | Via URL link (no backend) |
+| **15-Min-Raster** | Viertelstunden-Genauigkeit | Quarter-hour precision |
+| **Eigene Aktivitäten** | Freie Namen + Farbwahl | Custom names + color picker |
+| **Überlappungswarnung** | Zeitkonflikte erkennen | Detect time conflicts |
+| **Sortierte Einträge** | Nach Tag + Uhrzeit | By day + time |
+| **JSON-Import/Export** | Pläne laden/speichern | Load/save plans |
+| **Dark Mode** | Automatisch via Streamlit | Automatic via Streamlit |
+| **Statistik** | Zeitverteilung als Balkendiagramm | Time distribution bar chart |
+| **Datenschutz** | Alle Daten im Browser | All data in browser |
+| **Open Source** | MIT-Lizenz | MIT License |
+
+### Feature-Vergleich / Comparison
+
+| Feature | Wochenplaner | tryschedule.com (Free) | tryschedule.com (Paid) |
+|---|:---:|:---:|:---:|
+| PDF Export | ✅ kostenlos | ❌ | ✅ ab $4.90/Wo |
+| CSV Export | ✅ kostenlos | ❌ | ✅ ab $9.90/Mo |
+| Vorlagen/Templates | ✅ | ❌ | ✅ |
+| Kein Account nötig | ✅ | ✅ | ❌ |
+| Datenschutz/DSGVO | ✅ kein Tracking | ❌ 211 Ad-Partner | ❌ |
+| Open Source | ✅ MIT | ❌ | ❌ |
+| URL-Sharing | ✅ | ❌ | ❌ |
+| i18n (DE+EN) | ✅ | nur EN | nur EN |
 
 ---
 
-## Projektstruktur
+## Projektstruktur / Project Structure
 
 ```
 wochenplaner/
-├── app.py              # Haupt-App (Streamlit UI-Orchestrator)
-├── constants.py        # Gemeinsame Konstanten (Tage, Farben, Pfade)
-├── utils.py            # Hilfsfunktionen (Zeitkonvertierung, Validierung)
-├── calendar_render.py  # Kalender-Rendering (HTML/CSS/JS)
-├── pdf_export.py       # PDF-Generierung (reportlab)
-├── pyproject.toml      # Abhängigkeiten (uv)
+├── app.py              # Streamlit UI (main entry point)
+├── constants.py        # Shared constants (days, colors, paths)
+├── utils.py            # Utilities (time conversion, validation)
+├── calendar_render.py  # Calendar HTML/CSS/JS rendering
+├── pdf_export.py       # PDF generation (reportlab)
+├── i18n.py             # Translations DE/EN
+├── templates.py        # Predefined weekly plan templates
+├── pyproject.toml      # Dependencies (uv)
+├── .python-version     # Python 3.13 (Streamlit Cloud)
 ├── README.md
 ├── static/
-│   └── calendar.css    # Kalender-Stylesheet (externalisiert)
+│   └── calendar.css    # Calendar stylesheet (dark mode support)
 ├── .streamlit/
-│   └── config.toml     # Streamlit-Konfiguration (Theme etc.)
-├── .devcontainer/      # VS Code DevContainer-Konfiguration
+│   └── config.toml     # Streamlit config (theme, analytics)
+├── .devcontainer/      # VS Code DevContainer config
 │   ├── Dockerfile
 │   ├── devcontainer.json
 │   └── post-create.sh
 └── data/
-    ├── wochenplan.json # Automatisch erstellt (Nutzer-Daten)
-    ├── beispiel.json   # Beispiel-Datensatz
-    └── plans/          # Exportierte PDFs
+    ├── beispiel.json   # Example dataset / Beispieldaten
+    └── plans/          # Exported PDFs (local only)
 ```
 
 ---
 
-## Bedienung
+## Bedienung / Usage
 
-### Aktivität hinzufügen
-1. Aktivität aus Dropdown wählen – oder „Eigene Aktivität" aktivieren und Namen eingeben
-2. Farbe anpassen (wird automatisch gesetzt, aber frei änderbar)
-3. Tag wählen (Mo–So)
-4. Von / Bis aus Zeitdropdown wählen (15-Minuten-Raster)
-5. „+ Hinzufügen" klicken
-6. Bei Überschneidung: Warnung prüfen und optional „Trotzdem speichern"
+### Aktivität hinzufügen / Add activity
+1. Aktivität wählen oder eigene anlegen / Choose or create custom activity
+2. Farbe anpassen / Adjust color
+3. Tag + Zeitraum wählen (15-Min-Raster) / Pick day + time range (15-min grid)
+4. „Hinzufügen" klicken / Click "Add"
 
-### Wochenplan speichern / laden
-- **Laden:** Sidebar → „Dateiverwaltung" → Dropdown mit allen JSON-Dateien in `data/` → „Laden"
-- **Speichern:** Dateiname eingeben (Standard: `YYYY-MM-DD_wochenplan`) → „Speichern unter"
-- **Importieren:** JSON-Datei per Drag & Drop oder Datei-Auswahl hochladen
-- **Beispieldaten:** `data/beispiel.json` enthält einen vorgefertigten Beispielplan
+### Vorlagen / Templates
+- Sidebar → Vorlagen → Vorlage auswählen → Laden
+- 4 Vorlagen: Student, Fitness, Büro, Schichtplan
 
-### PDF exportieren
-1. Format wählen: DIN A4 oder DIN A5
-2. Titel eintragen (erscheint zentriert im PDF und als Kalender-Überschrift)
-3. Startzeit und Endzeit anpassen (optional)
-4. „PDF erzeugen" klicken
-5. „PDF herunterladen" klicken – die Datei wird auch in `data/plans/` gespeichert
+### Plan teilen / Share
+- Sidebar → Teilen → Link kopieren → Empfänger öffnet Link
+- Plan wird per URL übertragen (kein Backend nötig, ~20 Aktivitäten max)
 
-### CSV exportieren
-- In der Dateiverwaltung auf „CSV exportieren" klicken
-- Die CSV-Datei enthält alle Aktivitäten, sortiert nach Tag und Uhrzeit
+### PDF-Export
+1. Format: DIN A4 oder A5 (Querformat)
+2. Titel eingeben
+3. „PDF erzeugen" → „PDF herunterladen"
+
+### CSV-Export
+- Dateiverwaltung → „CSV exportieren"
 
 ---
 
-## Anforderungen
+## Anforderungen / Requirements
 
-- Python >= 3.11
-- [uv](https://docs.astral.sh/uv/) (Paketmanager)
-
-### uv installieren (falls noch nicht vorhanden)
+- Python >= 3.13
+- [uv](https://docs.astral.sh/uv/) (Paketmanager / package manager)
 
 ```bash
 # macOS / Linux
@@ -114,39 +138,39 @@ powershell -c "irm https://astral.sh/uv/install.ps1 | iex"
 
 ---
 
-## Entwicklung
-
-### Linting & Formatierung
-
-Das Projekt verwendet [Ruff](https://docs.astral.sh/ruff/) für Linting und Formatierung:
+## Entwicklung / Development
 
 ```bash
-# Lint prüfen
+# Lint
 uv run ruff check .
 
 # Auto-Fix
 uv run ruff check . --fix
 
-# Formatierung
+# Format
 uv run ruff format .
 ```
 
-### Bekannte Hinweise
+---
 
-#### Matplotlib-Warnung im DevContainer
+## Nächste Schritte / Next Steps
 
-Im DevContainer kann folgender Fehler auftreten:
+- [ ] **Streamlit Community Cloud Deployment** – Repository verbinden, App deployen
+- [ ] **Browser LocalStorage** – Datenpersistenz über Sitzungen hinweg (z.B. via `streamlit-js-eval`)
+- [ ] **Drag & Drop** – Zeitblöcke per Drag verschieben/resizen
+- [ ] **ICS/iCal Import** – Google Calendar / Outlook Export einlesen
+- [ ] **Print CSS** – `@media print` für direkte Browser-Druckfunktion
+- [ ] **Landing Page** – GitHub Pages mit SEO-optimierter Landingpage
+- [ ] **Streamlit Gallery** – App bei [streamlit.io/gallery](https://streamlit.io/gallery) einreichen
+- [ ] **Product Hunt Launch** – Community-Launch für Sichtbarkeit
+- [ ] **Plausible/Umami Analytics** – Datenschutzfreundliches Tracking (optional)
+- [ ] **Weitere Sprachen** – FR, ES, etc. (i18n-System ist erweiterbar)
 
-```
-mkdir -p failed for path /home/vscode/.cache/matplotlib: [Errno 13] Permission denied
-```
+---
 
-**Ursache:** Docker-Volumes werden initial als `root` initialisiert, der `vscode`-User
-hat kein Schreibrecht auf den Standard-Cache-Pfad.
+## Lizenz / License
 
-**Lösung:** Ist bereits im Dockerfile und in `post-create.sh` gefixt.
-Nach einem Container-Rebuild (in VS Code: `Ctrl+Shift+P` → „Rebuild Container")
-verschwindet die Warnung dauerhaft.
+MIT – siehe [LICENSE](LICENSE)
 
 Manueller Workaround (ohne Rebuild):
 ```bash

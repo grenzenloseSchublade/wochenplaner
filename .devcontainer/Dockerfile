@@ -1,7 +1,7 @@
 # ─────────────────────────────────────────────────────────────────────────────
-# Basis: offizielles Microsoft DevContainer-Image für Python 3.14
+# Basis: offizielles Microsoft DevContainer-Image für Python 3.13
 # ─────────────────────────────────────────────────────────────────────────────
-FROM mcr.microsoft.com/devcontainers/python:3.14-bookworm
+FROM mcr.microsoft.com/devcontainers/python:3.13-bookworm
 
 # ── uv installieren ───────────────────────────────────────────────────────────
 RUN pip install --no-cache-dir uv
