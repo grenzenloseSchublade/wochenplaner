@@ -38,12 +38,15 @@ from i18n import (
     t,
 )
 from pdf_export import generate_pdf
+from storage import ls_load, ls_save
 from templates import get_template_activities, get_template_names
 from utils import (
     Activity,
     check_overlap,
     get_text_color,
     safe_filename,
+    shift_day,
+    shift_time,
     slugify,
     t2m,
     validate_activity,
@@ -100,6 +103,16 @@ def save_activities(a: list[Activity], fp: Path | None = None) -> None:
         fp.write_text(json.dumps(a, ensure_ascii=False, indent=2), "utf-8")
     except OSError:
         pass  # Cloud: filesystem may be ephemeral
+    # Dual-write: also persist to browser LocalStorage
+    if fp == DATA_FILE or fp is None:
+        _ls_counter = st.session_state.get("_ls_wc", 0) + 1
+        st.session_state._ls_wc = _ls_counter
+        ls_save("activities", json.dumps(a, ensure_ascii=False), f"save_{_ls_counter}")
+        title = st.session_state.get("plan_title", "")
+        if title:
+            _ls_counter += 1
+            st.session_state._ls_wc = _ls_counter
+            ls_save("title", title, f"title_{_ls_counter}")
 
 
 def list_json_files() -> list[Path]:
@@ -199,6 +212,48 @@ Free PDF &amp; CSV export – no account, no tracking.">
 """
 
 
+# ── Callbacks for entry actions ──────────────────────────────────────────────
+def _move_activity(act_id: str, field: str, value: object) -> None:
+    """on_click callback – shift day or time of an activity."""
+    for a in st.session_state.activities:
+        if a["id"] == act_id:
+            if field == "day":
+                a["day"] = value
+            else:
+                a["start"], a["end"] = value  # type: ignore[assignment]
+            break
+    save_activities(st.session_state.activities)
+
+
+def _delete_activity(act_id: str) -> None:
+    """on_click callback – remove an activity by ID."""
+    st.session_state.activities = [
+        a for a in st.session_state.activities if a["id"] != act_id
+    ]
+    save_activities(st.session_state.activities)
+
+
+def _edit_activity(act_id: str) -> None:
+    """on_click callback – enter edit mode for an activity."""
+    for a in st.session_state.activities:
+        if a["id"] == act_id:
+            st.session_state.edit_mode = a
+            break
+
+
+def _delete_all_activities() -> None:
+    """on_click callback – delete all activities."""
+    st.session_state.activities = []
+    save_activities([])
+
+
+def _new_plan() -> None:
+    """on_click callback – start a fresh empty plan."""
+    st.session_state.activities = []
+    st.session_state.edit_mode = None
+    save_activities([])
+
+
 # ── Haupt-UI ─────────────────────────────────────────────────────────────────
 def main() -> None:
     DATA_DIR.mkdir(parents=True, exist_ok=True)
@@ -220,6 +275,7 @@ def main() -> None:
         ("pdf_bytes", None),
         ("custom_activities", None),
         ("lang", "de"),
+        ("_ls_wc", 0),
     ]
     for k, v in _defaults:
         if k not in st.session_state:
@@ -229,6 +285,44 @@ def main() -> None:
                 st.session_state[k] = []
             else:
                 st.session_state[k] = v
+
+    # ── Restore from LocalStorage (Cloud fallback) ───────────────────────────
+    if not st.session_state.activities and "ls_checked" not in st.session_state:
+        ls_data = ls_load("activities", "init_load")
+        if ls_data:
+            try:
+                items = json.loads(ls_data)
+                if isinstance(items, list):
+                    valid = [item for item in items if validate_activity(item)]
+                    if valid:
+                        st.session_state.activities = valid
+            except (json.JSONDecodeError, TypeError):
+                pass
+        st.session_state.ls_checked = True
+
+    # ── Restore language from LocalStorage ───────────────────────────────────
+    if "ls_lang_checked" not in st.session_state:
+        ls_lang = ls_load("lang", "init_lang")
+        if ls_lang and ls_lang in ("de", "en"):
+            st.session_state.lang = ls_lang
+        st.session_state.ls_lang_checked = True
+
+    # ── Restore title from LocalStorage ──────────────────────────────────────
+    if "ls_title_checked" not in st.session_state:
+        ls_title = ls_load("title", "init_title")
+        if ls_title and isinstance(ls_title, str) and ls_title.strip():
+            st.session_state.plan_title = ls_title
+        st.session_state.ls_title_checked = True
+
+    # ── Click-to-edit from calendar ──────────────────────────────────────────
+    qp = st.query_params
+    if "edit" in qp:
+        _click_id = qp["edit"]
+        del qp["edit"]
+        for a in st.session_state.activities:
+            if a["id"] == _click_id:
+                st.session_state.edit_mode = a
+                break
 
     # ── Handle shared plan from URL ──────────────────────────────────────────
     qp = st.query_params
@@ -243,11 +337,7 @@ def main() -> None:
             st.rerun()
 
     # ── Load example as fallback ─────────────────────────────────────────────
-    if not st.session_state.activities and "tried_example" not in st.session_state:
-        beispiel = DATA_DIR / "beispiel.json"
-        if beispiel.exists():
-            st.session_state.activities = load_activities(beispiel)
-        st.session_state.tried_example = True
+    # Removed: beispiel.json is now offered as a template, not auto-loaded.
 
     lang: Lang = st.session_state.lang
     acts: list[Activity] = st.session_state.activities
@@ -265,6 +355,8 @@ def main() -> None:
         )
         if new_lang != lang:
             st.session_state.lang = new_lang
+            st.session_state._ls_wc += 1
+            ls_save("lang", new_lang, f"lang_{st.session_state._ls_wc}")
             st.rerun()
         lang = st.session_state.lang
 
@@ -300,9 +392,8 @@ def main() -> None:
             _color_default = (
                 ea["color"] if ea else AKTIVITAETEN_FARBEN.get(name, "#F3E5AB")
             )
-            color = st.color_picker(
-                t("color", lang), _color_default, key=f"color_{name}_{id(ea)}"
-            )
+            _color_key = f"color_{name}_{ea['id']}" if ea else f"color_{name}_new"
+            color = st.color_picker(t("color", lang), _color_default, key=_color_key)
 
             _def_tag_de = ea["day"] if ea else WOCHENTAGE[0]
             _def_tag_display = day_display_map.get(_def_tag_de, day_names[0])
@@ -413,6 +504,7 @@ def main() -> None:
                     _ac = validate_color(_act["color"])
                     _tc = get_text_color(_ac)
                     _day_short = DAY_DISPLAY[lang].get(_act["day"], _act["day"])[:2]
+                    _aid = _act["id"]
                     st.markdown(
                         f"<div style='background:{_ac};color:{_tc};"
                         "padding:4px 10px;border-radius:4px;font-size:12px;"
@@ -425,38 +517,74 @@ def main() -> None:
                         "</div>",
                         unsafe_allow_html=True,
                     )
+                    # ── Quick-move arrows ◀ ▲ ▼ ▶ ────────────────────────
+                    _new_left = shift_day(_act["day"], -1)
+                    _new_right = shift_day(_act["day"], 1)
+                    _new_up = shift_time(_act["start"], _act["end"], -15)
+                    _new_down = shift_time(_act["start"], _act["end"], 15)
+                    _mc = st.columns(4)
+                    with _mc[0]:
+                        st.button(
+                            "◀",
+                            key=f"ml_{_aid}",
+                            disabled=_new_left is None,
+                            on_click=_move_activity,
+                            args=(_aid, "day", _new_left),
+                        )
+                    with _mc[1]:
+                        st.button(
+                            "▲",
+                            key=f"mu_{_aid}",
+                            disabled=_new_up is None,
+                            on_click=_move_activity,
+                            args=(_aid, "time", _new_up),
+                        )
+                    with _mc[2]:
+                        st.button(
+                            "▼",
+                            key=f"md_{_aid}",
+                            disabled=_new_down is None,
+                            on_click=_move_activity,
+                            args=(_aid, "time", _new_down),
+                        )
+                    with _mc[3]:
+                        st.button(
+                            "▶",
+                            key=f"mr_{_aid}",
+                            disabled=_new_right is None,
+                            on_click=_move_activity,
+                            args=(_aid, "day", _new_right),
+                        )
                     _eb, _db = st.columns(2)
                     with _eb:
-                        if st.button(
+                        st.button(
                             t("edit_activity", lang),
-                            key=f"e_{_act['id']}",
+                            key=f"e_{_aid}",
+                            on_click=_edit_activity,
+                            args=(_aid,),
                             width="stretch",
-                        ):
-                            st.session_state.edit_mode = _act
-                            st.rerun()
+                        )
                     with _db:
-                        if st.button(
+                        st.button(
                             t("delete", lang),
-                            key=f"d_{_act['id']}",
+                            key=f"d_{_aid}",
+                            on_click=_delete_activity,
+                            args=(_aid,),
                             width="stretch",
-                        ):
-                            acts.remove(_act)
-                            save_activities(acts)
-                            st.rerun()
+                        )
                     st.divider()
                 _confirm = st.checkbox(t("confirm_delete_all", lang), key="chk_del_all")
-                if st.button(
+                st.button(
                     t("delete_all", lang),
                     width="stretch",
                     key="btn_del_all",
                     disabled=not _confirm,
-                ):
-                    st.session_state.activities = []
-                    save_activities([])
-                    st.rerun()
+                    on_click=_delete_all_activities,
+                )
 
         # ── Vorlagen / Templates ───────────────────────────────────────────────
-        with st.expander(t("templates", lang), expanded=False):
+        _tpl_open = not acts
+        with st.expander(t("templates", lang), expanded=_tpl_open):
             tpl_names = get_template_names(lang)
             if tpl_names:
                 sel_tpl = st.selectbox(
@@ -477,6 +605,15 @@ def main() -> None:
                         save_activities(tpl_acts)
                         st.toast(f"{t('template_loaded', lang)} {tpl_names[sel_tpl]}")
                         st.rerun()
+
+        # ── Neuer Plan / New Plan ────────────────────────────────────────────
+        if acts:
+            st.button(
+                t("new_plan", lang),
+                width="stretch",
+                key="btn_new_plan",
+                on_click=_new_plan,
+            )
 
         # ── PDF erzeugen ─────────────────────────────────────────────────────────
         with st.expander(t("generate_pdf", lang), expanded=False):

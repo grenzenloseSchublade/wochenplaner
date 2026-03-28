@@ -98,10 +98,15 @@ def _activity_block(act: Activity, abs_start: int, eh: int) -> str:
     body = f'<span class="act-name">{n}</span>'
     if ht > 30:
         body += f'<span class="act-dur">{ds}</span>'
+    aid = html_lib.escape(act.get("id", ""))
+    day = html_lib.escape(act.get("day", ""))
     return (
-        f'<div title="{n}: {s}\u2013{e}" class="act-block" '
+        f'<div class="act-block" '
+        f'data-id="{aid}" data-name="{n}" data-day="{day}" '
+        f'data-start="{s}" data-end="{e}" data-color="{c}" '
         f'style="top:{top:.1f}px;height:{ht:.1f}px;background:{c};'
-        f'color:{tc};border-left-color:{bc}">' + body + "</div>"
+        f'color:{tc};border-left-color:{bc}" '
+        f'onclick="showCtx(event,this)">' + body + "</div>"
     )
 
 
@@ -136,11 +141,47 @@ def render_calendar(
             + "</div></div>"
         )
 
-    js = (
-        _CALENDAR_JS.replace("__PX__", str(PX_PER_MIN))
-        .replace("__SH__", str(sh))
-        .replace("__EH__", str(eh))
+    _edit_label = "Bearbeiten ✏️" if lang == "de" else "Edit ✏️"
+    ctx_js = (
+        "var _menu=null;"
+        "function hideCtx(){if(_menu){_menu.remove();_menu=null;}}"
+        "document.addEventListener('click',function(e){"
+        "  if(_menu&&!_menu.contains(e.target))hideCtx();"
+        "});"
+        "document.addEventListener('keydown',function(e){"
+        "  if(e.key==='Escape')hideCtx();"
+        "});"
+        "function showCtx(ev,el){"
+        "  ev.stopPropagation();hideCtx();"
+        "  var m=document.createElement('div');"
+        "  m.className='ctx-menu';"
+        "  var c=el.getAttribute('data-color')||'#ccc';"
+        "  m.innerHTML='"
+        '<div class="ctx-dot" style="background:\'+c+\'"></div>\''
+        "+'<div class=\"ctx-name\">'+el.getAttribute('data-name')+'</div>'"
+        "+'<div class=\"ctx-time\">'+el.getAttribute('data-day')"
+        "+' · '+el.getAttribute('data-start')+'\\u2013'+el.getAttribute('data-end')+'</div>'"
+        '+\'<a class="ctx-edit" href="#">' + _edit_label + "</a>';"
+        "  var r=el.getBoundingClientRect();"
+        "  m.style.left=Math.min(r.left,document.documentElement.clientWidth-170)+'px';"
+        "  m.style.top=(r.bottom+4)+'px';"
+        "  document.body.appendChild(m);"
+        "  _menu=m;"
+        "  m.querySelector('.ctx-edit').addEventListener('click',function(e2){"
+        "    e2.preventDefault();hideCtx();"
+        "    var id=el.getAttribute('data-id');"
+        "    if(id){try{"
+        "      var url=new URL(window.parent.location.href);"
+        "      url.searchParams.set('edit',id);"
+        "      window.parent.history.replaceState(null,'',url.toString());"
+        "      window.parent.location.reload();"
+        "    }catch(ex){}}"
+        "  });"
+        "}"
     )
+    js = ctx_js + _CALENDAR_JS.replace("__PX__", str(PX_PER_MIN)).replace(
+        "__SH__", str(sh)
+    ).replace("__EH__", str(eh))
 
     return (
         f'<!DOCTYPE html><html><head><meta charset="utf-8">'

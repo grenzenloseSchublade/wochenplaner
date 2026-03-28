@@ -126,6 +126,9 @@ TRANSLATIONS: dict[Lang, dict[str, str]] = {
         "add_first": "← Füge im Menü deine erste Aktivität hinzu.",
         # Language
         "language": "Sprache",
+        # New plan
+        "new_plan": "Neuer Plan",
+        "confirm_new_plan": "Wirklich neuen Plan starten?",
         # PDF footer
         "pdf_footer": "Wochenplaner – kostenlos erstellt",
     },
@@ -207,6 +210,9 @@ TRANSLATIONS: dict[Lang, dict[str, str]] = {
         "add_first": "← Add your first activity in the sidebar.",
         # Language
         "language": "Language",
+        # New plan
+        "new_plan": "New Plan",
+        "confirm_new_plan": "Really start a new plan?",
         # PDF footer
         "pdf_footer": "Weekly Planner – created for free",
     },

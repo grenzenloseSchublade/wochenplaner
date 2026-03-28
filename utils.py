@@ -4,6 +4,8 @@ import re
 import unicodedata
 from typing import TypedDict
 
+from constants import END_HOUR, START_HOUR, WOCHENTAGE
+
 
 class Activity(TypedDict):
     id: str
@@ -93,3 +95,30 @@ def safe_filename(name: str) -> str:
     name = name.replace("..", "").replace("/", "").replace("\\", "")
     name = name.strip(". ")
     return name or "wochenplan"
+
+
+def shift_time(start: str, end: str, delta_min: int) -> tuple[str, str] | None:
+    """Shift a start/end time pair by *delta_min* minutes (±15 steps).
+
+    Returns the new (start, end) pair or ``None`` if the result would
+    fall outside the visible grid (START_HOUR..END_HOUR).
+    """
+    s, e = t2m(start) + delta_min, t2m(end) + delta_min
+    if s < START_HOUR * 60 or e > END_HOUR * 60:
+        return None
+    return f"{s // 60:02d}:{s % 60:02d}", f"{e // 60:02d}:{e % 60:02d}"
+
+
+def shift_day(day: str, delta: int) -> str | None:
+    """Shift a German weekday name by *delta* positions (±1).
+
+    Returns the new day name or ``None`` if out of range.
+    """
+    try:
+        idx = WOCHENTAGE.index(day)
+    except ValueError:
+        return None
+    new_idx = idx + delta
+    if new_idx < 0 or new_idx >= len(WOCHENTAGE):
+        return None
+    return WOCHENTAGE[new_idx]
