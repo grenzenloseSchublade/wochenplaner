@@ -112,6 +112,7 @@ TRANSLATIONS: dict[Lang, dict[str, str]] = {
         "link_copied": "Link in Zwischenablage kopiert!",
         "plan_loaded_from_link": "Plan aus Link geladen!",
         "share_too_large": "Plan zu groß zum Teilen per URL.",
+        "share_help": "Empfänger öffnet den Link und der Plan wird geladen.",
         # Tabs
         "tab_calendar": "Kalender",
         "tab_statistics": "Statistik",
@@ -192,6 +193,7 @@ TRANSLATIONS: dict[Lang, dict[str, str]] = {
         "link_copied": "Link copied to clipboard!",
         "plan_loaded_from_link": "Plan loaded from link!",
         "share_too_large": "Plan too large for URL sharing.",
+        "share_help": "Recipients open the link and the plan loads automatically.",
         # Tabs
         "tab_calendar": "Calendar",
         "tab_statistics": "Statistics",

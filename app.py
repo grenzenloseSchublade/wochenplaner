@@ -68,7 +68,9 @@ def decode_plan(data: str) -> list[Activity] | None:
     """Decode a shared plan from URL parameter."""
     try:
         compressed = base64.urlsafe_b64decode(data)
-        raw = zlib.decompress(compressed)
+        raw = zlib.decompress(compressed, wbits=15, bufsize=1_000_000)
+        if len(raw) > 1_000_000:
+            return None
         items = json.loads(raw)
         if isinstance(items, list):
             return [item for item in items if validate_activity(item)]
@@ -524,15 +526,7 @@ def main() -> None:
                 if encoded:
                     share_url = f"?plan={encoded}"
                     st.code(share_url, language=None)
-                    st.caption(
-                        t("copy_link", lang)
-                        + " — "
-                        + (
-                            "Empfänger öffnet den Link und der Plan wird geladen."
-                            if lang == "de"
-                            else "Recipients open the link and the plan loads automatically."
-                        )
-                    )
+                    st.caption(t("copy_link", lang) + " — " + t("share_help", lang))
                 else:
                     st.warning(t("share_too_large", lang))
 

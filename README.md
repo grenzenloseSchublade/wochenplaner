@@ -171,15 +171,3 @@ uv run ruff format .
 ## Lizenz / License
 
 MIT – siehe [LICENSE](LICENSE)
-
-Manueller Workaround (ohne Rebuild):
-```bash
-export MPLCONFIGDIR=/tmp/matplotlib
-uv run streamlit run app.py
-```
-
----
-
-## Lizenz
-
-MIT

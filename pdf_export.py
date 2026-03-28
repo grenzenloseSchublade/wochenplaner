@@ -20,10 +20,9 @@ def _hex_to_color(hex_str: str) -> Color:
 
 
 def _text_color(hex_str: str) -> Color:
-    h = hex_str.lstrip("#")
-    r, g, b = int(h[0:2], 16), int(h[2:4], 16), int(h[4:6], 16)
-    lum = (0.299 * r + 0.587 * g + 0.114 * b) / 255
-    return HexColor("#333333") if lum > 0.5 else white
+    from utils import get_text_color
+
+    return HexColor(get_text_color(hex_str))
 
 
 def generate_pdf(
@@ -122,6 +121,11 @@ def generate_pdf(
     # ── Aktivitätsblöcke ─────────────────────────────────────────────────────
     for act in activities:
         if act.get("day") not in WOCHENTAGE:
+            continue
+        try:
+            sh, sm = map(int, act["start"].split(":"))
+            eh, em = map(int, act["end"].split(":"))
+        except (KeyError, ValueError):
             continue
 
         day_idx = WOCHENTAGE.index(act["day"])
