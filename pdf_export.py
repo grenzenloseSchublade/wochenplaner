@@ -10,16 +10,7 @@ from reportlab.lib.pagesizes import A4, A5, landscape
 from reportlab.lib.units import mm
 from reportlab.pdfgen import canvas
 
-WOCHENTAGE = [
-    "Montag",
-    "Dienstag",
-    "Mittwoch",
-    "Donnerstag",
-    "Freitag",
-    "Samstag",
-    "Sonntag",
-]
-WOCHENTAGE_KURZ = ["Mo", "Di", "Mi", "Do", "Fr", "Sa", "So"]
+from constants import WOCHENTAGE, WOCHENTAGE_KURZ
 
 
 def _hex_to_color(hex_str: str) -> Color:

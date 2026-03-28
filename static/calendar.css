@@ -1,0 +1,214 @@
+*,
+*::before,
+*::after {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0
+}
+
+:root {
+    --c-bg: #ffffff;
+    --c-we: #f7f8fc;
+    --c-today: #eef4ff;
+    --c-wrap: #f0f2f6;
+    --c-grid: #eeeeee;
+    --c-gridh: #f7f7f7;
+    --c-time: #cccccc;
+    --c-bdr: #e8e8e8;
+    --c-hdra: #4a6fa5;
+    --c-hdrb: #5c8a8a;
+    --c-hdr-today: #2d5a9e;
+    --c-now: rgba(220, 50, 50, .75);
+    --trans: .25s;
+}
+
+html.dark {
+    --c-bg: #1c1c1e;
+    --c-we: #232326;
+    --c-today: #1e2540;
+    --c-wrap: #111113;
+    --c-grid: rgba(255, 255, 255, .07);
+    --c-gridh: rgba(255, 255, 255, .03);
+    --c-time: #555558;
+    --c-bdr: rgba(255, 255, 255, .08);
+    --c-hdra: #2a3f5f;
+    --c-hdrb: #215050;
+    --c-hdr-today: #1a3a7a;
+    --c-now: rgba(255, 80, 80, .7);
+}
+
+body,
+.cal-outer,
+.cal-day,
+.cal-day-we,
+.cal-day-today,
+.cal-hdr-wk,
+.cal-hdr-we,
+.cal-time {
+    transition: background var(--trans), background-color var(--trans), color var(--trans);
+}
+
+body {
+    font-family: system-ui, 'Segoe UI', Arial, sans-serif;
+    background: var(--c-wrap)
+}
+
+.cal-outer {
+    display: flex;
+    width: 100%;
+    background: var(--c-wrap)
+}
+
+.cal-time-col {
+    width: 44px;
+    flex-shrink: 0;
+    padding-top: 35px
+}
+
+.cal-time-inner {
+    position: relative
+}
+
+.cal-time {
+    position: absolute;
+    right: 6px;
+    font-size: 9px;
+    color: var(--c-time);
+    white-space: nowrap;
+    font-variant-numeric: tabular-nums;
+    letter-spacing: .02em
+}
+
+.cal-grid-line {
+    position: absolute;
+    left: 0;
+    right: 0;
+    border-top: 1px solid var(--c-grid);
+    pointer-events: none
+}
+
+.cal-grid-half {
+    position: absolute;
+    left: 0;
+    right: 0;
+    border-top: 1px dashed var(--c-gridh);
+    pointer-events: none
+}
+
+.cal-cols {
+    flex: 1;
+    min-width: 0;
+    display: flex
+}
+
+.cal-day-wrap {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    min-width: 0
+}
+
+.cal-hdr {
+    font-size: 11px;
+    font-weight: 600;
+    text-align: center;
+    padding: 7px 2px;
+    color: rgba(255, 255, 255, .9);
+    letter-spacing: .07em;
+    text-transform: uppercase;
+    border-left: 1px solid rgba(255, 255, 255, .1)
+}
+
+.cal-hdr-wk {
+    background: var(--c-hdra)
+}
+
+.cal-hdr-we {
+    background: var(--c-hdrb)
+}
+
+.cal-hdr.today {
+    background: var(--c-hdr-today);
+    color: #fff
+}
+
+.cal-day {
+    position: relative;
+    background: var(--c-bg);
+    border-left: 1px solid var(--c-bdr)
+}
+
+.cal-day-we {
+    position: relative;
+    background: var(--c-we);
+    border-left: 1px solid var(--c-bdr)
+}
+
+.cal-day-today {
+    position: relative;
+    background: var(--c-today);
+    border-left: 1px solid var(--c-bdr)
+}
+
+.act-block {
+    position: absolute;
+    left: 2px;
+    right: 2px;
+    border-radius: 5px;
+    border-left: 3px solid transparent;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, .08);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    overflow: hidden;
+    padding: 3px 4px;
+    cursor: default;
+    transition: filter .15s ease, box-shadow .15s ease
+}
+
+.act-block:hover {
+    filter: brightness(.92);
+    box-shadow: 0 2px 6px rgba(0, 0, 0, .15)
+}
+
+.act-name {
+    font-weight: 700;
+    font-size: 11px;
+    line-height: 1.2
+}
+
+.act-dur {
+    font-size: 9px;
+    opacity: .72;
+    margin-top: 1px;
+    font-variant-numeric: tabular-nums
+}
+
+.now-line {
+    position: absolute;
+    left: 0;
+    right: 0;
+    pointer-events: none;
+    z-index: 10
+}
+
+.now-line::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: 0;
+    border-top: 2px solid var(--c-now)
+}
+
+.now-dot {
+    position: absolute;
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: var(--c-now);
+    top: -4px;
+    left: -1px
+}

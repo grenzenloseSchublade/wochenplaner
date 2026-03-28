@@ -14,17 +14,6 @@
       "source": "wochenplaner-uv-cache",
       "target": "/home/vscode/.cache/uv",
       "type": "volume"
-    },
-    {
-      "source": "/tmp/.X11-unix",
-      "target": "/tmp/.X11-unix",
-      "type": "bind"
-    },
-    {
-      "source": "${localEnv:HOME}/.Xauthority",
-      "target": "/home/vscode/.Xauthority",
-      "type": "bind",
-      "readonly": true
     }
   ],
   "postCreateCommand": "bash .devcontainer/post-create.sh",
@@ -41,10 +30,7 @@
   "remoteEnv": {
     "PATH": "${containerEnv:PATH}:${containerWorkspaceFolder}/.venv/bin",
     "UV_PROJECT_ENVIRONMENT": "${containerWorkspaceFolder}/.venv",
-    "MPLCONFIGDIR": "/home/vscode/.config/matplotlib",
-    "DISPLAY": ":0",
-    "XAUTHORITY": "/home/vscode/.Xauthority",
-    "GDK_BACKEND": "x11"
+    "MPLCONFIGDIR": "/home/vscode/.config/matplotlib"
   },
   "customizations": {
     "vscode": {
@@ -75,6 +61,5 @@
         "terminal.integrated.defaultProfile.linux": "zsh"
       }
     }
-  },
-  "initializeCommand": "touch ${HOME}/.Xauthority"
+  }
 }
