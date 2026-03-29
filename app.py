@@ -13,6 +13,7 @@ import zlib
 from datetime import datetime
 from pathlib import Path
 
+import plotly.graph_objects as go
 import streamlit as st
 import streamlit.components.v1 as components
 
@@ -38,13 +39,12 @@ from i18n import (
     t,
 )
 from pdf_export import generate_pdf
-from storage import ls_load, ls_save
+from storage import ls_delete, ls_load, ls_save
 from templates import get_template_activities, get_template_names
 from utils import (
     Activity,
     check_overlap,
     get_text_color,
-    safe_filename,
     shift_day,
     shift_time,
     slugify,
@@ -108,15 +108,6 @@ def save_activities(a: list[Activity], fp: Path | None = None) -> None:
         _ls_counter = st.session_state.get("_ls_wc", 0) + 1
         st.session_state._ls_wc = _ls_counter
         ls_save("activities", json.dumps(a, ensure_ascii=False), f"save_{_ls_counter}")
-        title = st.session_state.get("plan_title", "")
-        if title:
-            _ls_counter += 1
-            st.session_state._ls_wc = _ls_counter
-            ls_save("title", title, f"title_{_ls_counter}")
-
-
-def list_json_files() -> list[Path]:
-    return sorted(DATA_DIR.glob("*.json")) if DATA_DIR.exists() else []
 
 
 def _sort_activities(acts: list[Activity]) -> list[Activity]:
@@ -141,7 +132,6 @@ def _export_csv(acts: list[Activity], lang: Lang = "de") -> str:
 
 # ── Statistik ────────────────────────────────────────────────────────────────
 def render_statistics(activities: list[Activity], lang: Lang = "de") -> None:
-    import plotly.graph_objects as go
 
     if not activities:
         st.info(t("no_stats", lang))
@@ -247,11 +237,31 @@ def _delete_all_activities() -> None:
     save_activities([])
 
 
+def _duplicate_activity(act_id: str) -> None:
+    """on_click callback – duplicate an activity."""
+    for a in st.session_state.activities:
+        if a["id"] == act_id:
+            dup = Activity(
+                id=str(uuid.uuid4()),
+                name=a["name"],
+                day=a["day"],
+                start=a["start"],
+                end=a["end"],
+                color=a["color"],
+            )
+            st.session_state.activities.append(dup)
+            save_activities(st.session_state.activities)
+            break
+
+
 def _new_plan() -> None:
     """on_click callback – start a fresh empty plan."""
     st.session_state.activities = []
     st.session_state.edit_mode = None
     save_activities([])
+    _ls_counter = st.session_state.get("_ls_wc", 0) + 1
+    st.session_state._ls_wc = _ls_counter
+    ls_delete("title", f"del_title_{_ls_counter}")
 
 
 # ── Haupt-UI ─────────────────────────────────────────────────────────────────
@@ -325,7 +335,6 @@ def main() -> None:
                 break
 
     # ── Handle shared plan from URL ──────────────────────────────────────────
-    qp = st.query_params
     if "plan" in qp and "plan_loaded" not in st.session_state:
         shared = decode_plan(qp["plan"])
         if shared:
@@ -431,13 +440,17 @@ def main() -> None:
 
             def _do_save() -> None:
                 if ea:
-                    ea.update(
-                        name=name,
-                        day=tag_de,
-                        start=von,
-                        end=bis,
-                        color=color,
-                    )
+                    for i, a in enumerate(acts):
+                        if a["id"] == ea["id"]:
+                            acts[i] = Activity(
+                                id=ea["id"],
+                                name=name,
+                                day=tag_de,
+                                start=von,
+                                end=bis,
+                                color=color,
+                            )
+                            break
                     st.session_state.edit_mode = None
                 else:
                     acts.append(
@@ -555,12 +568,20 @@ def main() -> None:
                             on_click=_move_activity,
                             args=(_aid, "day", _new_right),
                         )
-                    _eb, _db = st.columns(2)
+                    _eb, _dpb, _db = st.columns(3)
                     with _eb:
                         st.button(
                             t("edit_activity", lang),
                             key=f"e_{_aid}",
                             on_click=_edit_activity,
+                            args=(_aid,),
+                            width="stretch",
+                        )
+                    with _dpb:
+                        st.button(
+                            t("duplicate", lang),
+                            key=f"dup_{_aid}",
+                            on_click=_duplicate_activity,
                             args=(_aid,),
                             width="stretch",
                         )
@@ -605,6 +626,8 @@ def main() -> None:
                         save_activities(tpl_acts)
                         st.toast(f"{t('template_loaded', lang)} {tpl_names[sel_tpl]}")
                         st.rerun()
+                if acts:
+                    st.caption(f"⚠️ {t('template_overwrite', lang)}")
 
         # ── Neuer Plan / New Plan ────────────────────────────────────────────
         if acts:
@@ -617,9 +640,14 @@ def main() -> None:
 
         # ── PDF erzeugen ─────────────────────────────────────────────────────────
         with st.expander(t("generate_pdf", lang), expanded=False):
-            st.session_state.plan_title = st.text_input(
+            _new_title = st.text_input(
                 t("plan_title", lang), st.session_state.plan_title, key="pti"
             )
+            if _new_title != st.session_state.plan_title:
+                st.session_state.plan_title = _new_title
+                _ls_counter = st.session_state.get("_ls_wc", 0) + 1
+                st.session_state._ls_wc = _ls_counter
+                ls_save("title", _new_title, f"title_{_ls_counter}")
             fmt = st.radio(t("format", lang), ["DIN A4", "DIN A5"], horizontal=True)
             with st.expander(t("time_range", lang), expanded=False):
                 sh_s = st.slider(t("start_hour", lang), 0, 23, START_HOUR)
@@ -667,45 +695,23 @@ def main() -> None:
                 else:
                     st.warning(t("share_too_large", lang))
 
+        # ── Plan speichern / Download JSON ──────────────────────────────────
+        if acts:
+            _slug = slugify(st.session_state.plan_title)
+            _json_name = f"{datetime.now().strftime('%Y-%m-%d')}_{_slug}.json"
+            st.download_button(
+                t("download_json", lang),
+                data=json.dumps(acts, ensure_ascii=False, indent=2),
+                file_name=_json_name,
+                mime="application/json",
+                width="stretch",
+                key="btn_json_dl",
+            )
+            st.caption(t("download_json_hint", lang))
+
         # ── Dateiverwaltung ──────────────────────────────────────────────────
         with st.expander(t("file_mgmt", lang), expanded=False):
-            jf = list_json_files()
-            if jf:
-                sel = st.selectbox(
-                    t("load_plan", lang), [p.stem for p in jf], key="imp"
-                )
-                if st.button(t("load", lang), width="stretch", key="btn_load"):
-                    try:
-                        st.session_state.activities = load_activities(
-                            DATA_DIR / f"{sel}.json"
-                        )
-                        st.toast(f"{t('loaded', lang)} {sel}")
-                    except (json.JSONDecodeError, KeyError) as exc:
-                        st.error(f"{t('load_error', lang)} {exc}")
-                    else:
-                        st.rerun()
-            else:
-                st.caption(t("no_plans", lang))
-
-            st.divider()
-
-            en = st.text_input(
-                t("filename", lang),
-                datetime.now().strftime("%Y-%m-%d_wochenplan"),
-                key="en",
-            )
-            if st.button(
-                t("save_as", lang),
-                width="stretch",
-                key="btn_saveas",
-            ):
-                safe_name = safe_filename(en.strip() or "wochenplan")
-                save_activities(acts, DATA_DIR / f"{safe_name}.json")
-                st.toast(f"{t('saved', lang)} {safe_name}.json")
-
-            st.divider()
-
-            # JSON-Upload
+            # JSON-Import
             uploaded = st.file_uploader(
                 t("import_json", lang),
                 type=["json"],
@@ -751,6 +757,7 @@ def main() -> None:
             + "</h2>"
         )
         st.markdown(_th, unsafe_allow_html=True)
+        _editing_id = ea["id"] if ea else ""
         components.html(
             render_calendar(
                 json.dumps(acts, ensure_ascii=False),
@@ -758,6 +765,7 @@ def main() -> None:
                 END_HOUR,
                 _today=datetime.now().strftime("%Y-%m-%d"),
                 lang=lang,
+                editing_id=_editing_id,
             ),
             height=int((END_HOUR - START_HOUR) * 60 * PX_PER_MIN) + 60,
             scrolling=False,

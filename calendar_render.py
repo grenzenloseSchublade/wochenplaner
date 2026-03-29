@@ -77,7 +77,9 @@ def _grid_lines(sh: int, eh: int, abs_start: int) -> str:
     return "".join(out)
 
 
-def _activity_block(act: Activity, abs_start: int, eh: int) -> str:
+def _activity_block(
+    act: Activity, abs_start: int, eh: int, editing_id: str = ""
+) -> str:
     sm, em = t2m(act["start"]), t2m(act["end"])
     dur = em - sm
     if dur <= 0:
@@ -100,8 +102,10 @@ def _activity_block(act: Activity, abs_start: int, eh: int) -> str:
         body += f'<span class="act-dur">{ds}</span>'
     aid = html_lib.escape(act.get("id", ""))
     day = html_lib.escape(act.get("day", ""))
+    _is_editing = 'data-editing="true" ' if aid == editing_id and editing_id else ""
     return (
         f'<div class="act-block" '
+        f"{_is_editing}"
         f'data-id="{aid}" data-name="{n}" data-day="{day}" '
         f'data-start="{s}" data-end="{e}" data-color="{c}" '
         f'style="top:{top:.1f}px;height:{ht:.1f}px;background:{c};'
@@ -117,6 +121,7 @@ def render_calendar(
     eh: int,
     _today: str = "",
     lang: Lang = "de",
+    editing_id: str = "",
 ) -> str:
     acts: list[dict] = json.loads(activities_json)
     css = _load_css()
@@ -129,7 +134,9 @@ def render_calendar(
     day_cols = ""
     for di, (tag, tk) in enumerate(zip(WOCHENTAGE, short_days, strict=True)):
         day_acts = [a for a in acts if a.get("day") == tag]
-        blocks = "".join(_activity_block(a, abs_start, eh) for a in day_acts)
+        blocks = "".join(
+            _activity_block(a, abs_start, eh, editing_id) for a in day_acts
+        )
         hdr_cls = "cal-hdr-we" if di >= 5 else "cal-hdr-wk"
         day_cls = "cal-day-we" if di >= 5 else "cal-day"
         day_cols += (
@@ -164,7 +171,10 @@ def render_calendar(
         '+\'<a class="ctx-edit" href="#">' + _edit_label + "</a>';"
         "  var r=el.getBoundingClientRect();"
         "  m.style.left=Math.min(r.left,document.documentElement.clientWidth-170)+'px';"
-        "  m.style.top=(r.bottom+4)+'px';"
+        "  var t=r.bottom+4;"
+        "  if(t+m.offsetHeight>document.documentElement.clientHeight)"
+        "    t=Math.max(4,r.top-m.offsetHeight-4);"
+        "  m.style.top=t+'px';"
         "  document.body.appendChild(m);"
         "  _menu=m;"
         "  m.querySelector('.ctx-edit').addEventListener('click',function(e2){"

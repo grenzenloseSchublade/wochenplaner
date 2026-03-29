@@ -129,8 +129,6 @@ def generate_pdf(
             continue
 
         day_idx = WOCHENTAGE.index(act["day"])
-        sh, sm = map(int, act["start"].split(":"))
-        eh, em = map(int, act["end"].split(":"))
         s_min = sh * 60 + sm
         e_min = eh * 60 + em
         duration = e_min - s_min

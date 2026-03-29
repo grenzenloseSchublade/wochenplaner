@@ -67,6 +67,7 @@ TRANSLATIONS: dict[Lang, dict[str, str]] = {
         "save_anyway": "Trotzdem speichern",
         "entries": "Einträge",
         "delete": "Löschen",
+        "duplicate": "Duplizieren",
         "confirm_delete_all": "Wirklich alle löschen?",
         "delete_all": "Alle löschen",
         # Validation
@@ -86,23 +87,18 @@ TRANSLATIONS: dict[Lang, dict[str, str]] = {
         "download_pdf": "PDF herunterladen",
         # File management
         "file_mgmt": "Dateiverwaltung",
-        "load_plan": "Wochenplan laden",
-        "load": "Laden",
-        "loaded": "Geladen:",
-        "load_error": "Fehler beim Laden:",
-        "no_plans": "Keine gespeicherten Pläne gefunden.",
-        "filename": "Dateiname",
-        "save_as": "Speichern unter",
-        "saved": "Gespeichert:",
         "import_json": "JSON importieren",
         "activities_imported": "Aktivitäten importiert",
         "no_valid_acts": "Keine gültigen Aktivitäten in der Datei.",
         "json_must_list": "JSON muss eine Liste von Aktivitäten sein.",
         "invalid_json": "Ungültige JSON-Datei.",
         "export_csv": "CSV exportieren",
+        "download_json": "💾 Plan speichern (JSON)",
+        "download_json_hint": 'Speichert den Plan als Datei auf deinem Gerät. Zum Wiederherstellen per "JSON importieren" laden.',
         # Templates
         "templates": "Vorlagen",
         "load_template": "Vorlage laden",
+        "template_overwrite": "Vorhandene Aktivitäten werden ersetzt!",
         "template_loaded": "Vorlage geladen:",
         # Sharing
         "share": "Teilen",
@@ -128,7 +124,6 @@ TRANSLATIONS: dict[Lang, dict[str, str]] = {
         "language": "Sprache",
         # New plan
         "new_plan": "Neuer Plan",
-        "confirm_new_plan": "Wirklich neuen Plan starten?",
         # PDF footer
         "pdf_footer": "Wochenplaner – kostenlos erstellt",
     },
@@ -151,6 +146,7 @@ TRANSLATIONS: dict[Lang, dict[str, str]] = {
         "save_anyway": "Save anyway",
         "entries": "Entries",
         "delete": "Delete",
+        "duplicate": "Duplicate",
         "confirm_delete_all": "Really delete all?",
         "delete_all": "Delete all",
         # Validation
@@ -170,23 +166,18 @@ TRANSLATIONS: dict[Lang, dict[str, str]] = {
         "download_pdf": "Download PDF",
         # File management
         "file_mgmt": "File management",
-        "load_plan": "Load weekly plan",
-        "load": "Load",
-        "loaded": "Loaded:",
-        "load_error": "Error loading:",
-        "no_plans": "No saved plans found.",
-        "filename": "Filename",
-        "save_as": "Save as",
-        "saved": "Saved:",
         "import_json": "Import JSON",
         "activities_imported": "activities imported",
         "no_valid_acts": "No valid activities in file.",
         "json_must_list": "JSON must be a list of activities.",
         "invalid_json": "Invalid JSON file.",
         "export_csv": "Export CSV",
+        "download_json": "💾 Save plan (JSON)",
+        "download_json_hint": 'Downloads the plan as a file to your device. Restore it later via "Import JSON".',
         # Templates
         "templates": "Templates",
         "load_template": "Load template",
+        "template_overwrite": "Existing activities will be replaced!",
         "template_loaded": "Template loaded:",
         # Sharing
         "share": "Share",
@@ -212,7 +203,6 @@ TRANSLATIONS: dict[Lang, dict[str, str]] = {
         "language": "Language",
         # New plan
         "new_plan": "New Plan",
-        "confirm_new_plan": "Really start a new plan?",
         # PDF footer
         "pdf_footer": "Weekly Planner – created for free",
     },

@@ -33,6 +33,7 @@ known-first-party = [
     "pdf_export",
     "i18n",
     "templates",
+    "storage",
 ]
 
 [tool.ruff.format]

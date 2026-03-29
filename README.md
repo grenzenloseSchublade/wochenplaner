@@ -48,7 +48,9 @@ Opens http://localhost:8501 in your browser automatically.
 | **Überlappungswarnung** | Zeitkonflikte erkennen | Detect time conflicts |
 | **Sortierte Einträge** | Nach Tag + Uhrzeit | By day + time |
 | **JSON-Import/Export** | Pläne laden/speichern | Load/save plans |
-| **Dark Mode** | Automatisch via Streamlit | Automatic via Streamlit |
+| **Browser-Speicher** | Daten bleiben im Browser | Data persists in browser |
+| **Dark Mode** | Standard, umschaltbar | Default, switchable |
+| **Quick-Move** | Pfeiltasten in der Sidebar | Arrow buttons in sidebar |
 | **Statistik** | Zeitverteilung als Balkendiagramm | Time distribution bar chart |
 | **Datenschutz** | Alle Daten im Browser | All data in browser |
 | **Open Source** | MIT-Lizenz | MIT License |
@@ -79,6 +81,7 @@ wochenplaner/
 ├── pdf_export.py       # PDF generation (reportlab)
 ├── i18n.py             # Translations DE/EN
 ├── templates.py        # Predefined weekly plan templates
+├── storage.py          # Browser LocalStorage abstraction
 ├── pyproject.toml      # Dependencies (uv)
 ├── .python-version     # Python 3.13 (Streamlit Cloud)
 ├── README.md
@@ -91,7 +94,6 @@ wochenplaner/
 │   ├── devcontainer.json
 │   └── post-create.sh
 └── data/
-    ├── beispiel.json   # Example dataset / Beispieldaten
     └── plans/          # Exported PDFs (local only)
 ```
 
@@ -107,7 +109,7 @@ wochenplaner/
 
 ### Vorlagen / Templates
 - Sidebar → Vorlagen → Vorlage auswählen → Laden
-- 4 Vorlagen: Student, Fitness, Büro, Schichtplan
+- 5 Vorlagen: Student, Fitness, Büro, Schichtplan, Beispiel
 
 ### Plan teilen / Share
 - Sidebar → Teilen → Link kopieren → Empfänger öffnet Link
@@ -156,14 +158,10 @@ uv run ruff format .
 ## Nächste Schritte / Next Steps
 
 - [ ] **Streamlit Community Cloud Deployment** – Repository verbinden, App deployen
-- [ ] **Browser LocalStorage** – Datenpersistenz über Sitzungen hinweg (z.B. via `streamlit-js-eval`)
 - [ ] **Drag & Drop** – Zeitblöcke per Drag verschieben/resizen
 - [ ] **ICS/iCal Import** – Google Calendar / Outlook Export einlesen
 - [ ] **Print CSS** – `@media print` für direkte Browser-Druckfunktion
 - [ ] **Landing Page** – GitHub Pages mit SEO-optimierter Landingpage
-- [ ] **Streamlit Gallery** – App bei [streamlit.io/gallery](https://streamlit.io/gallery) einreichen
-- [ ] **Product Hunt Launch** – Community-Launch für Sichtbarkeit
-- [ ] **Plausible/Umami Analytics** – Datenschutzfreundliches Tracking (optional)
 - [ ] **Weitere Sprachen** – FR, ES, etc. (i18n-System ist erweiterbar)
 
 ---

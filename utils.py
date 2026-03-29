@@ -17,6 +17,7 @@ class Activity(TypedDict):
 
 
 _HEX_COLOR_RE = re.compile(r"^#[0-9a-fA-F]{6}$")
+_TIME_RE = re.compile(r"^\d{2}:\d{2}$")
 
 _REQUIRED_KEYS = {"id", "name", "day", "start", "end", "color"}
 
@@ -87,7 +88,11 @@ def validate_activity(item: dict) -> bool:
         return False
     if not _REQUIRED_KEYS.issubset(item.keys()):
         return False
-    return all(isinstance(item[k], str) for k in _REQUIRED_KEYS)
+    if not all(isinstance(item[k], str) for k in _REQUIRED_KEYS):
+        return False
+    if not (_TIME_RE.match(item["start"]) and _TIME_RE.match(item["end"])):
+        return False
+    return True
 
 
 def safe_filename(name: str) -> str:
