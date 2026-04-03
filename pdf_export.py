@@ -4,6 +4,7 @@ Erzeugt ein pixelgenaues DIN A4 (Querformat) oder DIN A5 (Querformat) PDF.
 """
 
 import io
+from collections.abc import Sequence
 
 from reportlab.lib.colors import Color, HexColor, white
 from reportlab.lib.pagesizes import A4, A5, landscape
@@ -12,6 +13,7 @@ from reportlab.pdfgen import canvas
 
 from constants import WOCHENTAGE
 from i18n import WOCHENTAGE_KURZ_I18N, Lang, t
+from utils import Activity
 
 
 def _hex_to_color(hex_str: str) -> Color:
@@ -26,7 +28,7 @@ def _text_color(hex_str: str) -> Color:
 
 
 def generate_pdf(
-    activities: list[dict],
+    activities: Sequence[Activity],
     paper_format: str = "A4",
     start_hour: int = 6,
     end_hour: int = 22,

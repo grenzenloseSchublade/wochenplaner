@@ -57,6 +57,54 @@ from utils import (
 _MAX_SHARE_BYTES = 1800  # URL-safe limit
 
 
+def _normalize_activity_name(name: str) -> str:
+    """Normalize user input for stable storage and matching."""
+    return " ".join(name.split()).strip()
+
+
+def _base_color_map() -> dict[str, str]:
+    """Default color mapping from built-in activity presets."""
+    return {k: validate_color(v) for k, v in AKTIVITAETEN_FARBEN.items()}
+
+
+def _save_user_prefs() -> None:
+    """Persist user-specific preferences (custom names + color map)."""
+    _ls_counter = st.session_state.get("_ls_wc", 0) + 1
+    st.session_state._ls_wc = _ls_counter
+    ls_save(
+        "custom_activities",
+        json.dumps(st.session_state.custom_activities, ensure_ascii=False),
+        f"custom_{_ls_counter}",
+    )
+
+    _ls_counter += 1
+    st.session_state._ls_wc = _ls_counter
+    ls_save(
+        "activity_colors",
+        json.dumps(st.session_state.activity_colors, ensure_ascii=False),
+        f"colors_{_ls_counter}",
+    )
+
+
+def _sync_prefs_from_activities(acts: list[Activity]) -> None:
+    """Learn custom names and colors from existing activities."""
+    changed = False
+    defaults = set(AKTIVITAETEN_FARBEN)
+    for act in acts:
+        nm = _normalize_activity_name(act.get("name", ""))
+        if not nm:
+            continue
+        if nm not in defaults and nm not in st.session_state.custom_activities:
+            st.session_state.custom_activities.append(nm)
+            changed = True
+        c = validate_color(act.get("color", "#F3E5AB"))
+        if st.session_state.activity_colors.get(nm) != c:
+            st.session_state.activity_colors[nm] = c
+            changed = True
+    if changed:
+        _save_user_prefs()
+
+
 def encode_plan(acts: list[Activity]) -> str | None:
     """Compress + base64-encode a plan for URL sharing."""
     raw = json.dumps(acts, ensure_ascii=False, separators=(",", ":")).encode("utf-8")
@@ -250,7 +298,9 @@ def _duplicate_activity(act_id: str) -> None:
                 color=a["color"],
             )
             st.session_state.activities.append(dup)
+            st.session_state.activity_colors[a["name"]] = validate_color(a["color"])
             save_activities(st.session_state.activities)
+            _save_user_prefs()
             break
 
 
@@ -283,7 +333,9 @@ def main() -> None:
         ("edit_mode", None),
         ("plan_title", "Mein Wochenplan"),
         ("pdf_bytes", None),
+        ("pdf_format", "DIN-A4"),
         ("custom_activities", None),
+        ("activity_colors", None),
         ("lang", "de"),
         ("_ls_wc", 0),
     ]
@@ -293,6 +345,8 @@ def main() -> None:
                 st.session_state[k] = load_activities()
             elif k == "custom_activities":
                 st.session_state[k] = []
+            elif k == "activity_colors":
+                st.session_state[k] = _base_color_map()
             else:
                 st.session_state[k] = v
 
@@ -324,6 +378,42 @@ def main() -> None:
             st.session_state.plan_title = ls_title
         st.session_state.ls_title_checked = True
 
+    # ── Restore user prefs from LocalStorage ────────────────────────────────
+    if "ls_prefs_checked" not in st.session_state:
+        ls_custom = ls_load("custom_activities", "init_custom")
+        if ls_custom:
+            try:
+                items = json.loads(ls_custom)
+                if isinstance(items, list):
+                    seen: set[str] = set()
+                    cleaned: list[str] = []
+                    for raw in items:
+                        if isinstance(raw, str):
+                            nm = _normalize_activity_name(raw)
+                            if nm and nm not in seen:
+                                seen.add(nm)
+                                cleaned.append(nm)
+                    st.session_state.custom_activities = cleaned
+            except (json.JSONDecodeError, TypeError):
+                pass
+
+        ls_colors = ls_load("activity_colors", "init_colors")
+        if ls_colors:
+            try:
+                items = json.loads(ls_colors)
+                if isinstance(items, dict):
+                    merged = _base_color_map()
+                    for raw_name, raw_color in items.items():
+                        if isinstance(raw_name, str) and isinstance(raw_color, str):
+                            nm = _normalize_activity_name(raw_name)
+                            if nm:
+                                merged[nm] = validate_color(raw_color)
+                    st.session_state.activity_colors = merged
+            except (json.JSONDecodeError, TypeError):
+                pass
+
+        st.session_state.ls_prefs_checked = True
+
     # ── Click-to-edit from calendar ──────────────────────────────────────────
     qp = st.query_params
     if "edit" in qp:
@@ -350,6 +440,7 @@ def main() -> None:
 
     lang: Lang = st.session_state.lang
     acts: list[Activity] = st.session_state.activities
+    _sync_prefs_from_activities(acts)
 
     with st.sidebar:
         # ── Language selector ────────────────────────────────────────────────
@@ -387,9 +478,9 @@ def main() -> None:
 
             use_custom = st.checkbox(t("custom_activity", lang), key="chk_custom")
             if use_custom:
-                name = st.text_input(t("activity_name", lang), key="custom_name")
-                if name and name not in st.session_state.custom_activities:
-                    st.session_state.custom_activities.append(name)
+                name = _normalize_activity_name(
+                    st.text_input(t("activity_name", lang), key="custom_name")
+                )
             else:
                 _def_name = ea["name"] if ea else all_names[0]
                 name = st.selectbox(
@@ -398,9 +489,10 @@ def main() -> None:
                     index=all_names.index(_def_name) if _def_name in all_names else 0,
                 )
 
-            _color_default = (
-                ea["color"] if ea else AKTIVITAETEN_FARBEN.get(name, "#F3E5AB")
+            _mapped_color = st.session_state.activity_colors.get(
+                name, AKTIVITAETEN_FARBEN.get(name, "#F3E5AB")
             )
+            _color_default = ea["color"] if ea else _mapped_color
             _color_key = f"color_{name}_{ea['id']}" if ea else f"color_{name}_new"
             color = st.color_picker(t("color", lang), _color_default, key=_color_key)
 
@@ -439,6 +531,14 @@ def main() -> None:
                 bis = st.selectbox(t("to_time", lang), bo, index=_bis_idx)
 
             def _do_save() -> None:
+                if not name:
+                    return
+                st.session_state.activity_colors[name] = validate_color(color)
+                if (
+                    name not in AKTIVITAETEN_FARBEN
+                    and name not in st.session_state.custom_activities
+                ):
+                    st.session_state.custom_activities.append(name)
                 if ea:
                     for i, a in enumerate(acts):
                         if a["id"] == ea["id"]:
@@ -464,6 +564,7 @@ def main() -> None:
                         )
                     )
                 save_activities(acts)
+                _save_user_prefs()
                 st.rerun()
 
             if not name:
@@ -664,6 +765,7 @@ def main() -> None:
                     st.error(t("start_lt_end", lang))
                 else:
                     with st.spinner(t("generating_pdf", lang)):
+                        st.session_state.pdf_format = fmt.replace(" ", "-")
                         st.session_state.pdf_bytes = generate_pdf(
                             acts,
                             paper_format=fmt.replace("DIN ", ""),
@@ -674,7 +776,8 @@ def main() -> None:
                         )
             if st.session_state.pdf_bytes is not None:
                 _slug = slugify(st.session_state.plan_title)
-                _pdf_name = f"{_slug}.pdf"
+                _fmt_slug = slugify(st.session_state.get("pdf_format", "DIN-A4"))
+                _pdf_name = f"{_slug}_{_fmt_slug}.pdf"
                 st.download_button(
                     t("download_pdf", lang),
                     data=st.session_state.pdf_bytes,
