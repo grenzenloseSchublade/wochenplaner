@@ -832,25 +832,33 @@ def main() -> None:
                 key="json_upload",
             )
             if uploaded is not None:
-                with st.spinner(t("importing_json", lang)):
-                    try:
-                        raw = json.loads(uploaded.read().decode("utf-8"))
-                        if isinstance(raw, list):
-                            valid = [item for item in raw if validate_activity(item)]
-                            if valid:
-                                st.session_state.activities = valid
-                                _sync_prefs_from_activities(valid)
-                                save_activities(valid)
-                                st.toast(
-                                    f"{len(valid)} {t('activities_imported', lang)}"
-                                )
-                                st.rerun()
+                # Guard: process each unique file only once.
+                # st.file_uploader keeps the reference across reruns, so without
+                # this check the file would be re-imported on every render cycle.
+                _fp = f"{uploaded.name}_{uploaded.size}"
+                if st.session_state.get("_last_upload_fp") != _fp:
+                    st.session_state._last_upload_fp = _fp
+                    with st.spinner(t("importing_json", lang)):
+                        try:
+                            raw = json.loads(uploaded.read().decode("utf-8"))
+                            if isinstance(raw, list):
+                                valid = [
+                                    item for item in raw if validate_activity(item)
+                                ]
+                                if valid:
+                                    st.session_state.activities = valid
+                                    _sync_prefs_from_activities(valid)
+                                    save_activities(valid)
+                                    st.toast(
+                                        f"{len(valid)} {t('activities_imported', lang)}"
+                                    )
+                                    st.rerun()
+                                else:
+                                    st.error(t("no_valid_acts", lang))
                             else:
-                                st.error(t("no_valid_acts", lang))
-                        else:
-                            st.error(t("json_must_list", lang))
-                    except json.JSONDecodeError:
-                        st.error(t("invalid_json", lang))
+                                st.error(t("json_must_list", lang))
+                        except json.JSONDecodeError:
+                            st.error(t("invalid_json", lang))
 
             # CSV-Export
             if acts:
