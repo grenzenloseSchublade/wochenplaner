@@ -235,17 +235,30 @@ _SEO_HTML = """
     .stButton > button, .stDownloadButton > button { border-radius: 6px; }
     .stRadio [role="radiogroup"] label { font-size: .83rem; }
 </style>
+<meta name="application-name" content="Wochenplaner">
+<meta name="author" content="Wochenplaner Contributors">
 <meta name="description"
-      content="Free weekly schedule planner with PDF export. No account needed. \
-Kostenloser Wochenplaner mit PDF-Export – ohne Anmeldung.">
+      content="Kostenloser Online-Wochenplaner mit PDF-Export – ohne Anmeldung, ohne Tracking. \
+Free weekly schedule planner &amp; timetable builder with PDF export. No account needed.">
 <meta name="keywords"
-      content="weekly planner, schedule builder, Wochenplaner, Stundenplan, \
-PDF export, free, kostenlos, open source">
-<meta property="og:title" content="Free Weekly Planner | Wochenplaner">
+      content="Wochenplaner, Stundenplan, Wochenplan erstellen, Zeitplan, Wochenplan online,
+      Stundenplan kostenlos, Wochenplaner kostenlos, Wochenplan PDF, Aktivitätenplaner,
+      weekly planner, schedule builder, timetable, week planner online, free schedule,
+      PDF export, open source planner, Streamlit, tryschedule alternative">
+<meta property="og:title" content="Free Weekly Planner | Wochenplaner – kostenlos &amp; ohne Anmeldung">
 <meta property="og:description"
-      content="Plan your week visually with proportional time blocks. \
-Free PDF &amp; CSV export – no account, no tracking.">
+      content="Plane deine Woche visuell mit proportionalen Zeitblöcken. \
+PDF- &amp; CSV-Export kostenlos – kein Account, kein Tracking. \
+Free weekly schedule planner with PDF export – no account, no ads.">
 <meta property="og:type" content="website">
+<meta property="og:locale" content="de_DE">
+<meta property="og:locale:alternate" content="en_US">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="Free Weekly Planner | Wochenplaner">
+<meta name="twitter:description"
+      content="Kostenloser Wochenplaner mit PDF-Export – kein Account, kein Tracking. \
+Free weekly schedule planner with PDF export.">
+<meta name="robots" content="index, follow">
 """
 
 
