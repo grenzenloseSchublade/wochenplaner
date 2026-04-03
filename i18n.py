@@ -88,6 +88,7 @@ TRANSLATIONS: dict[Lang, dict[str, str]] = {
         # File management
         "file_mgmt": "Dateiverwaltung",
         "import_json": "JSON importieren",
+        "importing_json": "Plan wird geladen…",
         "activities_imported": "Aktivitäten importiert",
         "no_valid_acts": "Keine gültigen Aktivitäten in der Datei.",
         "json_must_list": "JSON muss eine Liste von Aktivitäten sein.",
@@ -167,6 +168,7 @@ TRANSLATIONS: dict[Lang, dict[str, str]] = {
         # File management
         "file_mgmt": "File management",
         "import_json": "Import JSON",
+        "importing_json": "Loading plan…",
         "activities_imported": "activities imported",
         "no_valid_acts": "No valid activities in file.",
         "json_must_list": "JSON must be a list of activities.",

@@ -832,21 +832,25 @@ def main() -> None:
                 key="json_upload",
             )
             if uploaded is not None:
-                try:
-                    raw = json.loads(uploaded.read().decode("utf-8"))
-                    if isinstance(raw, list):
-                        valid = [item for item in raw if validate_activity(item)]
-                        if valid:
-                            st.session_state.activities = valid
-                            save_activities(valid)
-                            st.toast(f"{len(valid)} {t('activities_imported', lang)}")
-                            st.rerun()
+                with st.spinner(t("importing_json", lang)):
+                    try:
+                        raw = json.loads(uploaded.read().decode("utf-8"))
+                        if isinstance(raw, list):
+                            valid = [item for item in raw if validate_activity(item)]
+                            if valid:
+                                st.session_state.activities = valid
+                                _sync_prefs_from_activities(valid)
+                                save_activities(valid)
+                                st.toast(
+                                    f"{len(valid)} {t('activities_imported', lang)}"
+                                )
+                                st.rerun()
+                            else:
+                                st.error(t("no_valid_acts", lang))
                         else:
-                            st.error(t("no_valid_acts", lang))
-                    else:
-                        st.error(t("json_must_list", lang))
-                except json.JSONDecodeError:
-                    st.error(t("invalid_json", lang))
+                            st.error(t("json_must_list", lang))
+                    except json.JSONDecodeError:
+                        st.error(t("invalid_json", lang))
 
             # CSV-Export
             if acts:
