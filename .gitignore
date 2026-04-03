@@ -4,9 +4,9 @@ __pycache__/
 *.pyc
 .ruff_cache/
 
-# Laufzeit-Daten
-data/wochenplan.json
-data/plans/*.pdf
+# Laufzeit-Daten (nie veröffentlichen)
+data/*.json
+data/plans/
 
 # IDE / OS
 .DS_Store

@@ -24,7 +24,6 @@ from constants import (
     DATA_FILE,
     DEFAULT_VON,
     END_HOUR,
-    PLANS_DIR,
     PX_PER_MIN,
     START_HOUR,
     TIME_OPTIONS,
@@ -317,7 +316,6 @@ def _new_plan() -> None:
 # ── Haupt-UI ─────────────────────────────────────────────────────────────────
 def main() -> None:
     DATA_DIR.mkdir(parents=True, exist_ok=True)
-    PLANS_DIR.mkdir(parents=True, exist_ok=True)
 
     st.set_page_config(
         page_title="Free Weekly Planner | Wochenplaner",

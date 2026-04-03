@@ -41,8 +41,11 @@ Opens http://localhost:8501 in your browser automatically.
 | **PDF-Export (kostenlos)** | DIN A4 / A5 Querformat | DIN A4 / A5 landscape |
 | **CSV-Export** | Für Excel / Google Sheets | For Excel / Google Sheets |
 | **Zweisprachig** | Deutsch + Englisch | German + English |
-| **Vorlagen** | Student, Fitness, Büro, Schichtplan | Student, Fitness, Office, Shift |
+| **Vorlagen** | Student, Fitness, Büro, Schichtplan, Beispiel | Student, Fitness, Office, Shift, Example |
 | **Plan teilen** | Per URL-Link (kein Backend) | Via URL link (no backend) |
+| **JSON-Download** | Plan als Datei speichern & importieren | Save plan as file & import |
+| **Farb-Gedächtnis** | Farbe pro Aktivität wird gespeichert | Color saved per activity name |
+| **Eigene Aktivitäten** | Bleiben als Dropdown-Optionen erhalten | Persist as dropdown options |
 | **15-Min-Raster** | Viertelstunden-Genauigkeit | Quarter-hour precision |
 | **Eigene Aktivitäten** | Freie Namen + Farbwahl | Custom names + color picker |
 | **Überlappungswarnung** | Zeitkonflikte erkennen | Detect time conflicts |
@@ -107,6 +110,10 @@ wochenplaner/
 3. Tag + Zeitraum wählen (15-Min-Raster) / Pick day + time range (15-min grid)
 4. „Hinzufügen" klicken / Click "Add"
 
+### Plan speichern & laden / Save & load
+- 💾 **Plan speichern (JSON)** → Datei auf Gerät speichern (manuelle Versionierung)
+- Dateiverwaltung → **JSON importieren** → gespeicherte Datei laden
+
 ### Vorlagen / Templates
 - Sidebar → Vorlagen → Vorlage auswählen → Laden
 - 5 Vorlagen: Student, Fitness, Büro, Schichtplan, Beispiel
@@ -121,7 +128,7 @@ wochenplaner/
 3. „PDF erzeugen" → „PDF herunterladen"
 
 ### CSV-Export
-- Dateiverwaltung → „CSV exportieren"
+- Sidebar → Dateiverwaltung → „CSV exportieren"
 
 ---
 
@@ -157,7 +164,7 @@ uv run ruff format .
 
 ## Nächste Schritte / Next Steps
 
-- [ ] **Streamlit Community Cloud Deployment** – Repository verbinden, App deployen
+- [x] **Streamlit Community Cloud Deployment** – Repository verbinden, App deployen
 - [ ] **Drag & Drop** – Zeitblöcke per Drag verschieben/resizen
 - [ ] **ICS/iCal Import** – Google Calendar / Outlook Export einlesen
 - [ ] **Print CSS** – `@media print` für direkte Browser-Druckfunktion
