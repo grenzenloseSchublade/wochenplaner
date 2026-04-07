@@ -364,6 +364,8 @@ def _new_plan() -> None:
     st.session_state.activities = []
     st.session_state.edit_mode = None
     st.session_state.plan_note = ""
+    _kw = datetime.now().isocalendar()[1]
+    st.session_state.plan_title = f"Mein Wochenplan – KW {_kw}"
     save_activities([])
     _reset_form_keys()
     _ls_counter = st.session_state.get("_ls_wc", 0) + 1
@@ -444,7 +446,7 @@ def _activity_form() -> None:
 
         note = st.text_area(
             t("note", lang), height=68, key="inp_note",
-            placeholder="…",
+            placeholder=t("note_placeholder", lang),
         )
 
         def _do_save() -> None:
@@ -659,10 +661,11 @@ def main() -> None:
 
     st.html(_SEO_HTML)
 
+    _kw = datetime.now().isocalendar()[1]
     _defaults: list[tuple] = [
         ("activities", None),
         ("edit_mode", None),
-        ("plan_title", "Mein Wochenplan"),
+        ("plan_title", f"Mein Wochenplan – KW {_kw}"),
         ("plan_note", ""),
         ("pdf_bytes", None),
         ("pdf_format", "DIN-A4"),
@@ -983,6 +986,16 @@ def main() -> None:
                     width="stretch",
                     key="btn_csv",
                 )
+
+        st.markdown(
+            "<div style='text-align:center;padding:16px 0 4px;"
+            "font-size:11px;color:#aaa;letter-spacing:.02em'>"
+            "v1.0.0 · "
+            "<a href='https://github.com/grenzenloseSchublade/wochenplaner'"
+            " target='_blank' style='color:#888;text-decoration:none'>"
+            "GitHub</a></div>",
+            unsafe_allow_html=True,
+        )
 
     # ── Hauptbereich: Tabs ───────────────────────────────────────────────────
     tab1, tab2 = st.tabs([t("tab_calendar", lang), t("tab_statistics", lang)])

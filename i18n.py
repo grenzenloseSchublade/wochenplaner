@@ -127,8 +127,9 @@ TRANSLATIONS: dict[Lang, dict[str, str]] = {
         "new_plan": "Neuer Plan",
         # Notes
         "note": "Notiz",
+        "note_placeholder": "z.B. Raum, Hinweise…",
         "plan_note": "Plan-Notiz",
-        "plan_note_placeholder": "Allgemeine Notiz für diese Woche…",
+        "plan_note_placeholder": "ausreichend trinken und Gas geben!",
         # PDF footer
         "pdf_footer": "Wochenplaner – kostenlos erstellt",
     },
@@ -211,8 +212,9 @@ TRANSLATIONS: dict[Lang, dict[str, str]] = {
         "new_plan": "New Plan",
         # Notes
         "note": "Note",
+        "note_placeholder": "e.g. room, remarks…",
         "plan_note": "Plan note",
-        "plan_note_placeholder": "General notes for this week…",
+        "plan_note_placeholder": "stay hydrated and give it your all!",
         # PDF footer
         "pdf_footer": "Weekly Planner – created for free",
     },
