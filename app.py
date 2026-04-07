@@ -752,16 +752,17 @@ def main() -> None:
 
         st.session_state.ls_prefs_checked = True
 
+    # ── Pending calendar edit (from previous run; must run before sidebar widgets)
+    if "_pending_cal_edit" in st.session_state:
+        _pending_id = st.session_state.pop("_pending_cal_edit")
+        _edit_activity(_pending_id)
+
     # ── Click-to-edit from calendar (legacy query param fallback) ────────────
     qp = st.query_params
     if "edit" in qp:
         _click_id = qp["edit"]
         del qp["edit"]
-        for a in st.session_state.activities:
-            if a["id"] == _click_id:
-                st.session_state.edit_mode = a
-                _edit_activity(a["id"])
-                break
+        _edit_activity(_click_id)
 
     # ── Handle shared plan from URL ──────────────────────────────────────────
     if "plan" in qp and "plan_loaded" not in st.session_state:
@@ -1023,7 +1024,7 @@ def main() -> None:
             key="cal",
         )
         if cal_event and cal_event.get("action") == "edit":
-            _edit_activity(cal_event["id"])
+            st.session_state._pending_cal_edit = cal_event["id"]
             st.rerun()
 
         if not acts:
