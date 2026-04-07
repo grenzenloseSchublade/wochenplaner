@@ -1,6 +1,6 @@
 [project]
 name = "wochenplaner"
-version = "0.1.0"
+version = "0.2.0"
 description = "Kostenloser Wochenplaner mit PDF-Export | Free weekly planner with PDF export"
 readme = "README.md"
 requires-python = ">=3.13"
@@ -27,13 +27,14 @@ ignore = ["E501"]
 
 [tool.ruff.lint.isort]
 known-first-party = [
-    "constants",
-    "utils",
+    "calendar_component",
     "calendar_render",
-    "pdf_export",
+    "constants",
     "i18n",
-    "templates",
+    "pdf_export",
     "storage",
+    "templates",
+    "utils",
 ]
 
 [tool.ruff.format]

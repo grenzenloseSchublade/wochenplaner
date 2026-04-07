@@ -9,6 +9,8 @@ from collections.abc import Sequence
 from reportlab.lib.colors import Color, HexColor, white
 from reportlab.lib.pagesizes import A4, A5, landscape
 from reportlab.lib.units import mm
+from reportlab.pdfbase.pdfdoc import PDFArray, PDFDictionary, PDFString
+from reportlab.pdfbase.pdfmetrics import stringWidth
 from reportlab.pdfgen import canvas
 
 from constants import WOCHENTAGE
@@ -27,6 +29,20 @@ def _text_color(hex_str: str) -> Color:
     return HexColor(get_text_color(hex_str))
 
 
+def _pdf_escape(text: str) -> str:
+    """Escape special characters for PDF string literals."""
+    return text.replace("\\", "\\\\").replace("(", "\\(").replace(")", "\\)")
+
+
+def _truncate_text(text: str, font: str, size: float, max_w: float) -> str:
+    """Shorten *text* so it fits within *max_w* points, appending '…' if truncated."""
+    if stringWidth(text, font, size) <= max_w:
+        return text
+    while len(text) > 1 and stringWidth(text + "…", font, size) > max_w:
+        text = text[:-1]
+    return text.rstrip() + "…"
+
+
 def generate_pdf(
     activities: Sequence[Activity],
     paper_format: str = "A4",
@@ -34,6 +50,7 @@ def generate_pdf(
     end_hour: int = 22,
     title: str = "Wochenplan",
     lang: Lang = "de",
+    plan_note: str = "",
 ) -> bytes:
     page_size = landscape(A4) if paper_format == "A4" else landscape(A5)
     page_w, page_h = page_size
@@ -45,10 +62,13 @@ def generate_pdf(
     time_w = 9 * mm  # Zeitspalte
     footer_h = 4 * mm
 
+    plan_note_stripped = plan_note.strip()
+    subtitle_h = 4 * mm if plan_note_stripped else 0
+
     grid_x = mg_l + time_w
     grid_y = mg_b + footer_h
     grid_w = page_w - mg_l - mg_r - time_w
-    grid_h = page_h - mg_t - mg_b - header_h - title_h - footer_h
+    grid_h = page_h - mg_t - mg_b - header_h - title_h - subtitle_h - footer_h
 
     col_w = grid_w / 7
     total_minutes = (end_hour - start_hour) * 60
@@ -62,10 +82,22 @@ def generate_pdf(
     c.rect(0, 0, page_w, page_h, fill=1, stroke=0)
 
     # ── Titel ────────────────────────────────────────────────────────────────
-    title_y = grid_y + grid_h + header_h
+    title_y = grid_y + grid_h + header_h + subtitle_h
     c.setFillColor(HexColor("#2C3E50"))
     c.setFont("Helvetica-Bold", 11)
     c.drawCentredString(page_w / 2, title_y + 1.5 * mm, title)
+
+    # ── Plan-Notiz (Untertitel) ──────────────────────────────────────────────
+    if plan_note_stripped:
+        note_y = grid_y + grid_h + header_h
+        c.setFillColor(HexColor("#888888"))
+        c.setFont("Helvetica", 7)
+        display_note = (
+            plan_note_stripped[:90] + "…"
+            if len(plan_note_stripped) > 90
+            else plan_note_stripped
+        )
+        c.drawCentredString(page_w / 2, note_y + 0.8 * mm, display_note)
 
     # ── Tagesheader ──────────────────────────────────────────────────────────
     header_y = grid_y + grid_h
@@ -163,22 +195,42 @@ def generate_pdf(
         dh, dm = duration // 60, duration % 60
         dur_str = f"{dh}h {dm}min" if dh and dm else f"{dh}h" if dh else f"{dm}min"
 
+        max_text_w = w - 4
+
         if height >= 18:
             fs = min(7.5, height * 0.28)
             fs = max(fs, 5.5)
             c.setFont("Helvetica-Bold", fs)
-            c.drawCentredString(x + w / 2, y + height / 2 + fs * 0.2, name)
+            draw_name = _truncate_text(name, "Helvetica-Bold", fs, max_text_w)
+            c.drawCentredString(x + w / 2, y + height / 2 + fs * 0.2, draw_name)
             if height >= 28:
                 c.setFont("Helvetica", max(fs - 1, 4.5))
-                c.setFillColor(
-                    _hex_to_color(color_hex[0:7] if len(color_hex) > 1 else "#888")
-                )
-                # slightly darker text for duration
                 c.setFillColor(tc)
                 c.drawCentredString(x + w / 2, y + height / 2 - fs * 1.1, dur_str)
         else:
             c.setFont("Helvetica-Bold", 5)
-            c.drawCentredString(x + w / 2, y + height / 2 - 2, name[:8])
+            draw_name = _truncate_text(name, "Helvetica-Bold", 5, max_text_w)
+            c.drawCentredString(x + w / 2, y + height / 2 - 2, draw_name)
+
+        # ── PDF Text Annotation (Sticky Note) for activity notes ─────────
+        note_text = act.get("note", "").strip()
+        if note_text:
+            ann_s = 10
+            ann_x = x + w - ann_s - 1
+            ann_y = y + height - ann_s - 1
+            ann = PDFDictionary()
+            ann["Type"] = "/Annot"
+            ann["Subtype"] = "/Text"
+            ann["Rect"] = PDFArray(
+                [ann_x, ann_y, ann_x + ann_s, ann_y + ann_s]
+            )
+            ann["Contents"] = PDFString(note_text)
+            ann["T"] = PDFString(name)
+            ann["Name"] = "/Comment"
+            ann["Open"] = "false"
+            ann["F"] = 4  # Print flag
+            ann["C"] = PDFArray([1, 0.85, 0])
+            c._addAnnotation(ann)
 
     # ── Footer ───────────────────────────────────────────────────────────────
     c.setFillColor(HexColor("#AAAAAA"))

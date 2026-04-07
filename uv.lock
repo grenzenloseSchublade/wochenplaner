@@ -793,7 +793,7 @@ wheels = [
 
 [[package]]
 name = "wochenplaner"
-version = "0.1.0"
+version = "0.2.0"
 source = { virtual = "." }
 dependencies = [
     { name = "plotly" },
@@ -811,7 +811,7 @@ dev = [
 requires-dist = [
     { name = "plotly", specifier = ">=5.18.0" },
     { name = "reportlab", specifier = ">=4.2.0" },
-    { name = "streamlit", specifier = ">=1.32.0" },
+    { name = "streamlit", specifier = ">=1.44.0" },
     { name = "streamlit-js-eval", specifier = ">=1.0.0" },
 ]
 

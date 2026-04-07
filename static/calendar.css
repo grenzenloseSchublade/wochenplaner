@@ -199,7 +199,10 @@ body {
 .act-name {
     font-weight: 700;
     font-size: 11px;
-    line-height: 1.2
+    line-height: 1.2;
+    max-width: 100%;
+    overflow-wrap: anywhere;
+    word-break: break-word
 }
 
 .act-dur {
@@ -300,4 +303,27 @@ body {
 .ctx-edit:hover {
     color: var(--c-hdr-today);
     text-decoration: underline
+}
+
+/* ── Note indicator on activity blocks ────────── */
+.act-note-icon {
+    position: absolute;
+    top: 1px;
+    right: 3px;
+    font-size: 8px;
+    opacity: .5;
+    pointer-events: none;
+    line-height: 1
+}
+
+.ctx-note {
+    font-size: 10px;
+    color: var(--c-time);
+    margin: 2px 0 6px;
+    max-height: 60px;
+    overflow-y: auto;
+    white-space: pre-wrap;
+    word-break: break-word;
+    border-left: 2px solid var(--c-bdr);
+    padding-left: 6px
 }

@@ -18,43 +18,102 @@ def _load_css() -> str:
     return (_STATIC_DIR / "calendar.css").read_text("utf-8")
 
 
-_CALENDAR_JS = (
-    "(function(){"
-    "  var PX=__PX__,SH=__SH__,EH=__EH__;"
-    "  function syncDark(){"
-    "    try{"
-    "      var app=window.parent.document.querySelector('.stApp');"
-    "      if(!app)return;"
-    "      var s=window.parent.getComputedStyle(app).getPropertyValue('color-scheme').trim();"
-    "      document.documentElement.classList.toggle('dark',s==='dark');"
-    "    }catch(e){}"
-    "  }"
-    "  syncDark();"
-    "  try{"
-    "    var _a=window.parent.document.querySelector('.stApp');"
-    "    if(_a)new MutationObserver(syncDark).observe(_a,{attributes:true});"
-    "  }catch(e){}"
-    "  setInterval(syncDark,500);"
-    "  var now=new Date();"
-    "  var todayIdx=(now.getDay()+6)%7;"
-    "  var hdrs=document.querySelectorAll('.cal-hdr');"
-    "  var days=document.querySelectorAll('.cal-day,.cal-day-we,.cal-day-today');"
-    "  if(hdrs[todayIdx])hdrs[todayIdx].classList.add('today');"
-    "  if(days[todayIdx])days[todayIdx].className='cal-day-today';"
-    "  var nowMin=now.getHours()*60+now.getMinutes();"
-    "  if(nowMin>=SH*60&&nowMin<=EH*60&&days[todayIdx]){"
-    "    var top=(nowMin-SH*60)*PX;"
-    "    var ln=document.createElement('div');"
-    "    ln.className='now-line';ln.style.top=top+'px';"
-    "    ln.innerHTML='<div class=\"now-dot\"></div>';"
-    "    days[todayIdx].appendChild(ln);"
-    "    setInterval(function(){"
-    "      var n2=new Date();var m2=n2.getHours()*60+n2.getMinutes();"
-    "      if(m2>=SH*60&&m2<=EH*60){ln.style.top=(m2-SH*60)*PX+'px'}"
-    "    },60000);"
-    "  }"
-    "})();"
-)
+def _calendar_js(px: float, sh: int, eh: int) -> str:
+    """Runtime JS for dark-mode sync and current-time indicator."""
+    return (
+        "(function(){"
+        f"  var PX={px},SH={sh},EH={eh};"
+        "  function syncDark(){"
+        "    try{"
+        "      var app=window.parent.document.querySelector('.stApp');"
+        "      if(!app)return;"
+        "      var s=window.parent.getComputedStyle(app).getPropertyValue('color-scheme').trim();"
+        "      document.documentElement.classList.toggle('dark',s==='dark');"
+        "    }catch(e){}"
+        "  }"
+        "  syncDark();"
+        "  try{"
+        "    var _a=window.parent.document.querySelector('.stApp');"
+        "    if(_a)new MutationObserver(syncDark).observe(_a,{attributes:true});"
+        "  }catch(e){}"
+        "  var now=new Date();"
+        "  var todayIdx=(now.getDay()+6)%7;"
+        "  var hdrs=document.querySelectorAll('.cal-hdr');"
+        "  var days=document.querySelectorAll('.cal-day,.cal-day-we,.cal-day-today');"
+        "  if(hdrs[todayIdx])hdrs[todayIdx].classList.add('today');"
+        "  if(days[todayIdx])days[todayIdx].className='cal-day-today';"
+        "  var nowMin=now.getHours()*60+now.getMinutes();"
+        "  if(nowMin>=SH*60&&nowMin<=EH*60&&days[todayIdx]){"
+        "    var top=(nowMin-SH*60)*PX;"
+        "    var ln=document.createElement('div');"
+        "    ln.className='now-line';ln.style.top=top+'px';"
+        "    ln.innerHTML='<div class=\"now-dot\"></div>';"
+        "    days[todayIdx].appendChild(ln);"
+        "    setInterval(function(){"
+        "      var n2=new Date();var m2=n2.getHours()*60+n2.getMinutes();"
+        "      if(m2>=SH*60&&m2<=EH*60){ln.style.top=(m2-SH*60)*PX+'px'}"
+        "    },60000);"
+        "  }"
+        "})();"
+    )
+
+
+def _ctx_menu_js(edit_label: str, component_mode: bool = False) -> str:
+    """Context-menu JS for activity blocks."""
+    if component_mode:
+        edit_action = (
+            "    var id=el.getAttribute('data-id');"
+            "    if(id && window.Streamlit){"
+            "      window.Streamlit.setComponentValue({action:'edit',id:id});"
+            "    }"
+        )
+    else:
+        edit_action = (
+            "    var id=el.getAttribute('data-id');"
+            "    if(id){try{"
+            "      var url=new URL(window.parent.location.href);"
+            "      url.searchParams.set('edit',id);"
+            "      window.parent.history.replaceState(null,'',url.toString());"
+            "      window.parent.location.reload();"
+            "    }catch(ex){}}"
+        )
+    return (
+        "var _menu=null;"
+        "function hideCtx(){if(_menu){_menu.remove();_menu=null;}}"
+        "document.addEventListener('click',function(e){"
+        "  if(_menu&&!_menu.contains(e.target))hideCtx();"
+        "});"
+        "document.addEventListener('keydown',function(e){"
+        "  if(e.key==='Escape')hideCtx();"
+        "});"
+        "function showCtx(ev,el){"
+        "  ev.stopPropagation();hideCtx();"
+        "  var m=document.createElement('div');"
+        "  m.className='ctx-menu';"
+        "  var c=el.getAttribute('data-color')||'#ccc';"
+        "  var noteText=el.getAttribute('data-note')||'';"
+        "  var noteHtml=noteText?'<div class=\"ctx-note\">'+noteText.replace(/</g,'&lt;')+'</div>':'';"
+        "  m.innerHTML='"
+        '<div class="ctx-dot" style="background:\'+c+\'"></div>\''
+        "+'<div class=\"ctx-name\">'+el.getAttribute('data-name')+'</div>'"
+        "+'<div class=\"ctx-time\">'+el.getAttribute('data-day')"
+        "+' · '+el.getAttribute('data-start')+'\\u2013'+el.getAttribute('data-end')+'</div>'"
+        "+noteHtml"
+        '+\'<a class="ctx-edit" href="#">' + edit_label + "</a>';"
+        "  var r=el.getBoundingClientRect();"
+        "  m.style.left=Math.min(r.left,document.documentElement.clientWidth-170)+'px';"
+        "  var t=r.bottom+4;"
+        "  if(t+m.offsetHeight>document.documentElement.clientHeight)"
+        "    t=Math.max(4,r.top-m.offsetHeight-4);"
+        "  m.style.top=t+'px';"
+        "  document.body.appendChild(m);"
+        "  _menu=m;"
+        "  m.querySelector('.ctx-edit').addEventListener('click',function(e2){"
+        "    e2.preventDefault();hideCtx();"
+        + edit_action
+        + "  });"
+        "}"
+    )
 
 
 def _time_labels(sh: int, eh: int, abs_start: int) -> str:
@@ -97,6 +156,9 @@ def _activity_block(
     n = html_lib.escape(act["name"])
     s = html_lib.escape(act["start"])
     e = html_lib.escape(act["end"])
+    note_raw = act.get("note", "")
+    note_attr = f' data-note="{html_lib.escape(note_raw)}"' if note_raw else ""
+    note_icon = '<span class="act-note-icon">&#9998;</span>' if note_raw else ""
     body = f'<span class="act-name">{n}</span>'
     if ht > 30:
         body += f'<span class="act-dur">{ds}</span>'
@@ -107,10 +169,13 @@ def _activity_block(
         f'<div class="act-block" '
         f"{_is_editing}"
         f'data-id="{aid}" data-name="{n}" data-day="{day}" '
-        f'data-start="{s}" data-end="{e}" data-color="{c}" '
+        f'data-start="{s}" data-end="{e}" data-color="{c}"{note_attr} '
         f'style="top:{top:.1f}px;height:{ht:.1f}px;background:{c};'
         f'color:{tc};border-left-color:{bc}" '
-        f'onclick="showCtx(event,this)">' + body + "</div>"
+        f'onclick="showCtx(event,this)">'
+        + note_icon
+        + body
+        + "</div>"
     )
 
 
@@ -122,6 +187,7 @@ def render_calendar(
     _today: str = "",
     lang: Lang = "de",
     editing_id: str = "",
+    component_mode: bool = False,
 ) -> str:
     acts: list[dict] = json.loads(activities_json)
     css = _load_css()
@@ -149,58 +215,24 @@ def render_calendar(
         )
 
     _edit_label = "Bearbeiten ✏️" if lang == "de" else "Edit ✏️"
-    ctx_js = (
-        "var _menu=null;"
-        "function hideCtx(){if(_menu){_menu.remove();_menu=null;}}"
-        "document.addEventListener('click',function(e){"
-        "  if(_menu&&!_menu.contains(e.target))hideCtx();"
-        "});"
-        "document.addEventListener('keydown',function(e){"
-        "  if(e.key==='Escape')hideCtx();"
-        "});"
-        "function showCtx(ev,el){"
-        "  ev.stopPropagation();hideCtx();"
-        "  var m=document.createElement('div');"
-        "  m.className='ctx-menu';"
-        "  var c=el.getAttribute('data-color')||'#ccc';"
-        "  m.innerHTML='"
-        '<div class="ctx-dot" style="background:\'+c+\'"></div>\''
-        "+'<div class=\"ctx-name\">'+el.getAttribute('data-name')+'</div>'"
-        "+'<div class=\"ctx-time\">'+el.getAttribute('data-day')"
-        "+' · '+el.getAttribute('data-start')+'\\u2013'+el.getAttribute('data-end')+'</div>'"
-        '+\'<a class="ctx-edit" href="#">' + _edit_label + "</a>';"
-        "  var r=el.getBoundingClientRect();"
-        "  m.style.left=Math.min(r.left,document.documentElement.clientWidth-170)+'px';"
-        "  var t=r.bottom+4;"
-        "  if(t+m.offsetHeight>document.documentElement.clientHeight)"
-        "    t=Math.max(4,r.top-m.offsetHeight-4);"
-        "  m.style.top=t+'px';"
-        "  document.body.appendChild(m);"
-        "  _menu=m;"
-        "  m.querySelector('.ctx-edit').addEventListener('click',function(e2){"
-        "    e2.preventDefault();hideCtx();"
-        "    var id=el.getAttribute('data-id');"
-        "    if(id){try{"
-        "      var url=new URL(window.parent.location.href);"
-        "      url.searchParams.set('edit',id);"
-        "      window.parent.history.replaceState(null,'',url.toString());"
-        "      window.parent.location.reload();"
-        "    }catch(ex){}}"
-        "  });"
-        "}"
-    )
-    js = ctx_js + _CALENDAR_JS.replace("__PX__", str(PX_PER_MIN)).replace(
-        "__SH__", str(sh)
-    ).replace("__EH__", str(eh))
+    ctx_js = _ctx_menu_js(_edit_label, component_mode=component_mode)
+    cal_js = _calendar_js(PX_PER_MIN, sh, eh)
+    js = ctx_js + cal_js
 
-    return (
-        f'<!DOCTYPE html><html><head><meta charset="utf-8">'
-        f"<style>{css}</style></head><body>"
-        f"<script>{js}</script>"
+    body = (
         f'<div class="cal-outer">'
         f'  <div class="cal-time-col">'
         f'    <div class="cal-time-inner" style="height:{total_px}px">{labels}</div>'
         f"  </div>"
         f'  <div class="cal-cols">{day_cols}</div>'
-        f"</div></body></html>"
+        f"</div>"
+    )
+
+    if component_mode:
+        return f"<style>{css}</style>{body}<script>{js}</script>"
+
+    return (
+        f'<!DOCTYPE html><html><head><meta charset="utf-8">'
+        f"<style>{css}</style></head><body>"
+        f"{body}<script>{js}</script></body></html>"
     )

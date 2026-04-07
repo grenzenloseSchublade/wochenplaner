@@ -2,7 +2,7 @@
 
 import re
 import unicodedata
-from typing import TypedDict
+from typing import NotRequired, TypedDict
 
 from constants import END_HOUR, START_HOUR, WOCHENTAGE
 
@@ -14,6 +14,7 @@ class Activity(TypedDict):
     start: str
     end: str
     color: str
+    note: NotRequired[str]
 
 
 _HEX_COLOR_RE = re.compile(r"^#[0-9a-fA-F]{6}$")

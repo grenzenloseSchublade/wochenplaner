@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html><head>
+<meta charset="utf-8">
+<style>html,body{margin:0;padding:0;overflow:hidden;background:transparent}</style>
+</head>
+<body>
+<div id="root"></div>
+<script>
+(function(){
+  /* Minimal Streamlit Component communication layer */
+  var Streamlit={
+    setComponentReady:function(){
+      window.parent.postMessage(
+        {isStreamlitMessage:true,type:"streamlit:componentReady",apiVersion:1},"*");
+    },
+    setFrameHeight:function(h){
+      window.parent.postMessage(
+        {isStreamlitMessage:true,type:"streamlit:setFrameHeight",
+         height:h||document.body.scrollHeight},"*");
+    },
+    setComponentValue:function(v){
+      window.parent.postMessage(
+        {isStreamlitMessage:true,type:"streamlit:setComponentValue",value:v},"*");
+    }
+  };
+  window.Streamlit=Streamlit;
+
+  window.addEventListener("message",function(e){
+    if(!e.data||e.data.type!=="streamlit:render") return;
+    var args=e.data.args;
+    if(!args) return;
+
+    var root=document.getElementById("root");
+    root.innerHTML=args.calendar_html||"";
+
+    /* Scripts injected via innerHTML don't execute — clone them */
+    root.querySelectorAll("script").forEach(function(old){
+      var s=document.createElement("script");
+      s.textContent=old.textContent;
+      old.parentNode.replaceChild(s,old);
+    });
+
+    Streamlit.setFrameHeight(args.height||document.body.scrollHeight);
+  });
+
+  Streamlit.setComponentReady();
+  Streamlit.setFrameHeight(300);
+})();
+</script>
+</body>
+</html>

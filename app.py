@@ -15,8 +15,8 @@ from pathlib import Path
 
 import plotly.graph_objects as go
 import streamlit as st
-import streamlit.components.v1 as components
 
+from calendar_component import calendar_component
 from calendar_render import render_calendar
 from constants import (
     AKTIVITAETEN_FARBEN,
@@ -54,6 +54,19 @@ from utils import (
 
 # ── Sharing helpers ──────────────────────────────────────────────────────────
 _MAX_SHARE_BYTES = 1800  # URL-safe limit
+
+# ── Form widget keys (stable across reruns) ──────────────────────────────────
+_FORM_KEYS = (
+    "sel_activity",
+    "sel_day",
+    "sel_from",
+    "sel_to",
+    "sel_color",
+    "inp_note",
+    "chk_custom",
+    "custom_name",
+    "_form_prev_name",
+)
 
 
 def _normalize_activity_name(name: str) -> str:
@@ -104,6 +117,12 @@ def _sync_prefs_from_activities(acts: list[Activity]) -> None:
         _save_user_prefs()
 
 
+def _reset_form_keys() -> None:
+    """Clear form widget state so next render starts fresh."""
+    for k in _FORM_KEYS:
+        st.session_state.pop(k, None)
+
+
 def encode_plan(acts: list[Activity]) -> str | None:
     """Compress + base64-encode a plan for URL sharing."""
     raw = json.dumps(acts, ensure_ascii=False, separators=(",", ":")).encode("utf-8")
@@ -150,7 +169,6 @@ def save_activities(a: list[Activity], fp: Path | None = None) -> None:
         fp.write_text(json.dumps(a, ensure_ascii=False, indent=2), "utf-8")
     except OSError:
         pass  # Cloud: filesystem may be ephemeral
-    # Dual-write: also persist to browser LocalStorage
     if fp == DATA_FILE or fp is None:
         _ls_counter = st.session_state.get("_ls_wc", 0) + 1
         st.session_state._ls_wc = _ls_counter
@@ -166,19 +184,24 @@ def _export_csv(acts: list[Activity], lang: Lang = "de") -> str:
     buf = io.StringIO()
     writer = csv.writer(buf, delimiter=";")
     header = (
-        ["Name", "Tag", "Von", "Bis", "Farbe"]
+        ["Name", "Tag", "Von", "Bis", "Farbe", "Notiz"]
         if lang == "de"
-        else ["Name", "Day", "From", "To", "Color"]
+        else ["Name", "Day", "From", "To", "Color", "Note"]
     )
     writer.writerow(header)
     for a in _sort_activities(acts):
         day_display = DAY_DISPLAY[lang].get(a["day"], a["day"])
-        writer.writerow([a["name"], day_display, a["start"], a["end"], a["color"]])
+        writer.writerow(
+            [a["name"], day_display, a["start"], a["end"], a["color"],
+             a.get("note", "")]
+        )
     return buf.getvalue()
 
 
 # ── Statistik ────────────────────────────────────────────────────────────────
-def render_statistics(activities: list[Activity], lang: Lang = "de") -> None:
+@st.fragment
+def _statistics_fragment(activities: list[Activity], lang: Lang = "de") -> None:
+    st.markdown(f"## {t('time_dist', lang)}")
 
     if not activities:
         st.info(t("no_stats", lang))
@@ -284,10 +307,27 @@ def _delete_activity(act_id: str) -> None:
 
 
 def _edit_activity(act_id: str) -> None:
-    """on_click callback – enter edit mode for an activity."""
+    """on_click callback – enter edit mode and pre-populate form widgets."""
     for a in st.session_state.activities:
         if a["id"] == act_id:
             st.session_state.edit_mode = a
+            lang: Lang = st.session_state.lang
+            nm = a["name"]
+            all_preset = set(AKTIVITAETEN_FARBEN) | set(
+                st.session_state.get("custom_activities", [])
+            )
+            if nm in all_preset:
+                st.session_state.chk_custom = False
+                st.session_state.sel_activity = nm
+            else:
+                st.session_state.chk_custom = True
+                st.session_state.custom_name = nm
+            st.session_state.sel_day = DAY_DISPLAY[lang].get(a["day"], a["day"])
+            st.session_state.sel_from = a["start"]
+            st.session_state.sel_to = a["end"]
+            st.session_state.sel_color = a["color"]
+            st.session_state.inp_note = a.get("note", "")
+            st.session_state._form_prev_name = nm
             break
 
 
@@ -308,6 +348,7 @@ def _duplicate_activity(act_id: str) -> None:
                 start=a["start"],
                 end=a["end"],
                 color=a["color"],
+                note=a.get("note", ""),
             )
             st.session_state.activities.append(dup)
             st.session_state.activity_colors[a["name"]] = validate_color(a["color"])
@@ -320,10 +361,288 @@ def _new_plan() -> None:
     """on_click callback – start a fresh empty plan."""
     st.session_state.activities = []
     st.session_state.edit_mode = None
+    st.session_state.plan_note = ""
     save_activities([])
+    _reset_form_keys()
     _ls_counter = st.session_state.get("_ls_wc", 0) + 1
     st.session_state._ls_wc = _ls_counter
     ls_delete("title", f"del_title_{_ls_counter}")
+    _ls_counter += 1
+    st.session_state._ls_wc = _ls_counter
+    ls_delete("plan_note", f"del_pnote_{_ls_counter}")
+
+
+# ── Activity form fragment ───────────────────────────────────────────────────
+@st.fragment
+def _activity_form() -> None:
+    """Isolated fragment for the add/edit activity form.
+
+    Widget interactions here only trigger a fragment rerun, keeping the
+    calendar and the rest of the page stable.
+    """
+    ea = st.session_state.edit_mode
+    lang: Lang = st.session_state.lang
+    acts: list[Activity] = st.session_state.activities
+
+    all_names = list(AKTIVITAETEN_FARBEN) + [
+        n
+        for n in st.session_state.custom_activities
+        if n not in AKTIVITAETEN_FARBEN
+    ]
+    day_names = WOCHENTAGE_I18N[lang]
+    day_from_display = DAY_FROM_DISPLAY[lang]
+
+    # ── Defaults for a fresh form ────────────────────────────────────────
+    if "sel_from" not in st.session_state:
+        st.session_state.sel_from = DEFAULT_VON
+    if "sel_color" not in st.session_state:
+        st.session_state.sel_color = "#F3E5AB"
+    if "sel_day" not in st.session_state:
+        st.session_state.sel_day = day_names[0]
+
+    _lbl = t("edit_activity", lang) if ea else t("add_activity", lang)
+    with st.expander(_lbl, expanded=True):
+        use_custom = st.checkbox(t("custom_activity", lang), key="chk_custom")
+        if use_custom:
+            name = _normalize_activity_name(
+                st.text_input(t("activity_name", lang), key="custom_name")
+            )
+        else:
+            name = st.selectbox(
+                t("activity", lang), all_names, key="sel_activity"
+            )
+
+        # Auto-update color when activity name changes
+        _prev_name = st.session_state.get("_form_prev_name")
+        if name and name != _prev_name:
+            st.session_state._form_prev_name = name
+            if not ea:
+                mapped = st.session_state.activity_colors.get(
+                    name, AKTIVITAETEN_FARBEN.get(name, "#F3E5AB")
+                )
+                st.session_state.sel_color = mapped
+
+        color = st.color_picker(t("color", lang), key="sel_color")
+
+        tag_display = st.selectbox(t("day", lang), day_names, key="sel_day")
+        tag_de = day_from_display.get(tag_display, WOCHENTAGE[0])
+
+        _c1, _c2 = st.columns(2)
+        with _c1:
+            von = st.selectbox(t("from_time", lang), TIME_OPTIONS, key="sel_from")
+        with _c2:
+            bo = (
+                TIME_OPTIONS[TIME_OPTIONS.index(von) + 1 :]
+                if von in TIME_OPTIONS
+                else TIME_OPTIONS
+            )
+            if "sel_to" in st.session_state and st.session_state.sel_to not in bo:
+                del st.session_state["sel_to"]
+            bis = st.selectbox(t("to_time", lang), bo, key="sel_to")
+
+        note = st.text_area(
+            t("note", lang), height=68, key="inp_note",
+            placeholder="…",
+        )
+
+        def _do_save() -> None:
+            if not name:
+                return
+            st.session_state.activity_colors[name] = validate_color(color)
+            if (
+                name not in AKTIVITAETEN_FARBEN
+                and name not in st.session_state.custom_activities
+            ):
+                st.session_state.custom_activities.append(name)
+            if ea:
+                for i, a in enumerate(acts):
+                    if a["id"] == ea["id"]:
+                        acts[i] = Activity(
+                            id=ea["id"],
+                            name=name,
+                            day=tag_de,
+                            start=von,
+                            end=bis,
+                            color=color,
+                            note=note,
+                        )
+                        break
+                st.session_state.edit_mode = None
+            else:
+                acts.append(
+                    Activity(
+                        id=str(uuid.uuid4()),
+                        name=name,
+                        day=tag_de,
+                        start=von,
+                        end=bis,
+                        color=color,
+                        note=note,
+                    )
+                )
+            save_activities(acts)
+            _save_user_prefs()
+            _reset_form_keys()
+            st.rerun()
+
+        if not name:
+            st.warning(t("enter_name", lang))
+        elif t2m(bis) <= t2m(von):
+            st.error(t("end_after_start", lang))
+        else:
+            _conflicts = check_overlap(
+                acts, tag_de, von, bis, ea["id"] if ea else None
+            )
+            if _conflicts:
+                _cn = ", ".join(c["name"] for c in _conflicts)
+                st.warning(f"{t('overlap_with', lang)} **{_cn}**")
+                if st.button(
+                    t("save_anyway", lang),
+                    width="stretch",
+                    key="btn_force",
+                ):
+                    _do_save()
+                if st.button(
+                    t("cancel", lang),
+                    width="stretch",
+                    key="btn_ovlp_cancel",
+                ):
+                    st.session_state.edit_mode = None
+                    _reset_form_keys()
+                    st.rerun()
+            else:
+                _slbl = t("save", lang) if ea else t("add", lang)
+                if st.button(
+                    _slbl,
+                    width="stretch",
+                    type="primary",
+                    key="btn_save",
+                ):
+                    _do_save()
+
+        if ea:
+            if st.button(
+                t("cancel", lang),
+                width="stretch",
+                key="btn_cancel_edit",
+            ):
+                st.session_state.edit_mode = None
+                _reset_form_keys()
+                st.rerun()
+
+
+# ── Entries list fragment ────────────────────────────────────────────────────
+@st.fragment
+def _entries_fragment() -> None:
+    """Fragment for the sorted activity list with action buttons."""
+    acts: list[Activity] = st.session_state.activities
+    lang: Lang = st.session_state.lang
+
+    if not acts:
+        return
+
+    with st.expander(f"{t('entries', lang)} ({len(acts)})", expanded=False):
+        for _act in _sort_activities(acts):
+            _ns = html_lib.escape(_act["name"])
+            _ac = validate_color(_act["color"])
+            _tc = get_text_color(_ac)
+            _day_short = DAY_DISPLAY[lang].get(_act["day"], _act["day"])[:2]
+            _aid = _act["id"]
+            _note_preview = ""
+            _raw_note = _act.get("note", "")
+            if _raw_note:
+                _short = _raw_note[:40] + ("…" if len(_raw_note) > 40 else "")
+                _note_preview = (
+                    f"<div style='font-size:10px;color:#888;margin-top:-1px;"
+                    f"margin-bottom:3px;padding:0 10px;overflow:hidden;"
+                    f"white-space:nowrap;text-overflow:ellipsis'>"
+                    f"{html_lib.escape(_short)}</div>"
+                )
+            st.markdown(
+                f"<div style='background:{_ac};color:{_tc};"
+                "padding:4px 10px;border-radius:4px;font-size:12px;"
+                "margin-bottom:2px;overflow-wrap:anywhere;"
+                "word-break:break-word'>"
+                f"<b>{_ns}</b>&nbsp;&middot;&nbsp;"
+                f"{html_lib.escape(_day_short)}&nbsp;"
+                f"{html_lib.escape(_act['start'])}"
+                f"\u2013{html_lib.escape(_act['end'])}"
+                "</div>"
+                + _note_preview,
+                unsafe_allow_html=True,
+            )
+            # ── Quick-move arrows ◀ ▲ ▼ ▶ ────────────────────────
+            _new_left = shift_day(_act["day"], -1)
+            _new_right = shift_day(_act["day"], 1)
+            _new_up = shift_time(_act["start"], _act["end"], -15)
+            _new_down = shift_time(_act["start"], _act["end"], 15)
+            _mc = st.columns(4)
+            with _mc[0]:
+                st.button(
+                    "◀",
+                    key=f"ml_{_aid}",
+                    disabled=_new_left is None,
+                    on_click=_move_activity,
+                    args=(_aid, "day", _new_left),
+                )
+            with _mc[1]:
+                st.button(
+                    "▲",
+                    key=f"mu_{_aid}",
+                    disabled=_new_up is None,
+                    on_click=_move_activity,
+                    args=(_aid, "time", _new_up),
+                )
+            with _mc[2]:
+                st.button(
+                    "▼",
+                    key=f"md_{_aid}",
+                    disabled=_new_down is None,
+                    on_click=_move_activity,
+                    args=(_aid, "time", _new_down),
+                )
+            with _mc[3]:
+                st.button(
+                    "▶",
+                    key=f"mr_{_aid}",
+                    disabled=_new_right is None,
+                    on_click=_move_activity,
+                    args=(_aid, "day", _new_right),
+                )
+            _eb, _dpb, _db = st.columns(3)
+            with _eb:
+                st.button(
+                    t("edit_activity", lang),
+                    key=f"e_{_aid}",
+                    on_click=_edit_activity,
+                    args=(_aid,),
+                    width="stretch",
+                )
+            with _dpb:
+                st.button(
+                    t("duplicate", lang),
+                    key=f"dup_{_aid}",
+                    on_click=_duplicate_activity,
+                    args=(_aid,),
+                    width="stretch",
+                )
+            with _db:
+                st.button(
+                    t("delete", lang),
+                    key=f"d_{_aid}",
+                    on_click=_delete_activity,
+                    args=(_aid,),
+                    width="stretch",
+                )
+            st.divider()
+        _confirm = st.checkbox(t("confirm_delete_all", lang), key="chk_del_all")
+        st.button(
+            t("delete_all", lang),
+            width="stretch",
+            key="btn_del_all",
+            disabled=not _confirm,
+            on_click=_delete_all_activities,
+        )
 
 
 # ── Haupt-UI ─────────────────────────────────────────────────────────────────
@@ -343,6 +662,7 @@ def main() -> None:
         ("activities", None),
         ("edit_mode", None),
         ("plan_title", "Mein Wochenplan"),
+        ("plan_note", ""),
         ("pdf_bytes", None),
         ("pdf_format", "DIN-A4"),
         ("custom_activities", None),
@@ -389,6 +709,13 @@ def main() -> None:
             st.session_state.plan_title = ls_title
         st.session_state.ls_title_checked = True
 
+    # ── Restore plan note from LocalStorage ──────────────────────────────────
+    if "ls_plan_note_checked" not in st.session_state:
+        ls_pn = ls_load("plan_note", "init_plan_note")
+        if ls_pn and isinstance(ls_pn, str):
+            st.session_state.plan_note = ls_pn
+        st.session_state.ls_plan_note_checked = True
+
     # ── Restore user prefs from LocalStorage ────────────────────────────────
     if "ls_prefs_checked" not in st.session_state:
         ls_custom = ls_load("custom_activities", "init_custom")
@@ -425,7 +752,7 @@ def main() -> None:
 
         st.session_state.ls_prefs_checked = True
 
-    # ── Click-to-edit from calendar ──────────────────────────────────────────
+    # ── Click-to-edit from calendar (legacy query param fallback) ────────────
     qp = st.query_params
     if "edit" in qp:
         _click_id = qp["edit"]
@@ -433,6 +760,7 @@ def main() -> None:
         for a in st.session_state.activities:
             if a["id"] == _click_id:
                 st.session_state.edit_mode = a
+                _edit_activity(a["id"])
                 break
 
     # ── Handle shared plan from URL ──────────────────────────────────────────
@@ -445,9 +773,6 @@ def main() -> None:
             st.query_params.clear()
             st.toast(t("plan_loaded_from_link", st.session_state.lang))
             st.rerun()
-
-    # ── Load example as fallback ─────────────────────────────────────────────
-    # Removed: beispiel.json is now offered as a template, not auto-loaded.
 
     lang: Lang = st.session_state.lang
     acts: list[Activity] = st.session_state.activities
@@ -468,254 +793,20 @@ def main() -> None:
             st.session_state.lang = new_lang
             st.session_state._ls_wc += 1
             ls_save("lang", new_lang, f"lang_{st.session_state._ls_wc}")
+            _reset_form_keys()
             st.rerun()
         lang = st.session_state.lang
 
         st.title(t("app_title", lang))
         st.caption(t("app_caption", lang))
 
-        day_names = WOCHENTAGE_I18N[lang]
-        day_from_display = DAY_FROM_DISPLAY[lang]
-        day_display_map = DAY_DISPLAY[lang]
+        # ── Activity form (fragment – only reruns itself on widget change) ──
+        _activity_form()
 
-        ea = st.session_state.edit_mode
-        _lbl = t("edit_activity", lang) if ea else t("add_activity", lang)
-        with st.expander(_lbl, expanded=True):
-            all_names = list(AKTIVITAETEN_FARBEN) + [
-                n
-                for n in st.session_state.custom_activities
-                if n not in AKTIVITAETEN_FARBEN
-            ]
+        # ── Entries list (fragment) ──────────────────────────────────────────
+        _entries_fragment()
 
-            use_custom = st.checkbox(t("custom_activity", lang), key="chk_custom")
-            if use_custom:
-                name = _normalize_activity_name(
-                    st.text_input(t("activity_name", lang), key="custom_name")
-                )
-            else:
-                _def_name = ea["name"] if ea else all_names[0]
-                name = st.selectbox(
-                    t("activity", lang),
-                    all_names,
-                    index=all_names.index(_def_name) if _def_name in all_names else 0,
-                )
-
-            _mapped_color = st.session_state.activity_colors.get(
-                name, AKTIVITAETEN_FARBEN.get(name, "#F3E5AB")
-            )
-            _color_default = ea["color"] if ea else _mapped_color
-            _color_key = f"color_{name}_{ea['id']}" if ea else f"color_{name}_new"
-            color = st.color_picker(t("color", lang), _color_default, key=_color_key)
-
-            _def_tag_de = ea["day"] if ea else WOCHENTAGE[0]
-            _def_tag_display = day_display_map.get(_def_tag_de, day_names[0])
-            tag_display = st.selectbox(
-                t("day", lang),
-                day_names,
-                index=(
-                    day_names.index(_def_tag_display)
-                    if _def_tag_display in day_names
-                    else 0
-                ),
-            )
-            tag_de = day_from_display.get(tag_display, WOCHENTAGE[0])
-
-            _def_von = ea["start"] if ea else DEFAULT_VON
-            _c1, _c2 = st.columns(2)
-            with _c1:
-                _von_idx = (
-                    TIME_OPTIONS.index(_def_von)
-                    if _def_von in TIME_OPTIONS
-                    else TIME_OPTIONS.index(DEFAULT_VON)
-                )
-                von = st.selectbox(t("from_time", lang), TIME_OPTIONS, index=_von_idx)
-            with _c2:
-                _def_bis = ea["end"] if ea else None
-                bo = (
-                    TIME_OPTIONS[TIME_OPTIONS.index(von) + 1 :]
-                    if von in TIME_OPTIONS
-                    else TIME_OPTIONS
-                )
-                _bis_idx = (
-                    bo.index(_def_bis) if _def_bis in bo else (1 if len(bo) > 1 else 0)
-                )
-                bis = st.selectbox(t("to_time", lang), bo, index=_bis_idx)
-
-            def _do_save() -> None:
-                if not name:
-                    return
-                st.session_state.activity_colors[name] = validate_color(color)
-                if (
-                    name not in AKTIVITAETEN_FARBEN
-                    and name not in st.session_state.custom_activities
-                ):
-                    st.session_state.custom_activities.append(name)
-                if ea:
-                    for i, a in enumerate(acts):
-                        if a["id"] == ea["id"]:
-                            acts[i] = Activity(
-                                id=ea["id"],
-                                name=name,
-                                day=tag_de,
-                                start=von,
-                                end=bis,
-                                color=color,
-                            )
-                            break
-                    st.session_state.edit_mode = None
-                else:
-                    acts.append(
-                        Activity(
-                            id=str(uuid.uuid4()),
-                            name=name,
-                            day=tag_de,
-                            start=von,
-                            end=bis,
-                            color=color,
-                        )
-                    )
-                save_activities(acts)
-                _save_user_prefs()
-                st.rerun()
-
-            if not name:
-                st.warning(t("enter_name", lang))
-            elif t2m(bis) <= t2m(von):
-                st.error(t("end_after_start", lang))
-            else:
-                _conflicts = check_overlap(
-                    acts, tag_de, von, bis, ea["id"] if ea else None
-                )
-                if _conflicts:
-                    _cn = ", ".join(c["name"] for c in _conflicts)
-                    st.warning(f"{t('overlap_with', lang)} **{_cn}**")
-                    if st.button(
-                        t("save_anyway", lang),
-                        width="stretch",
-                        key="btn_force",
-                    ):
-                        _do_save()
-                    if st.button(
-                        t("cancel", lang),
-                        width="stretch",
-                        key="btn_ovlp_cancel",
-                    ):
-                        st.session_state.edit_mode = None
-                        st.rerun()
-                else:
-                    _slbl = t("save", lang) if ea else t("add", lang)
-                    if st.button(
-                        _slbl,
-                        width="stretch",
-                        type="primary",
-                        key="btn_save",
-                    ):
-                        _do_save()
-
-            if ea:
-                if st.button(
-                    t("cancel", lang),
-                    width="stretch",
-                    key="btn_cancel_edit",
-                ):
-                    st.session_state.edit_mode = None
-                    st.rerun()
-
-        # ── Einträge (sortiert nach Tag + Uhrzeit) ──────────────────────────
-        if acts:
-            with st.expander(f"{t('entries', lang)} ({len(acts)})", expanded=False):
-                for _act in _sort_activities(acts):
-                    _ns = html_lib.escape(_act["name"])
-                    _ac = validate_color(_act["color"])
-                    _tc = get_text_color(_ac)
-                    _day_short = DAY_DISPLAY[lang].get(_act["day"], _act["day"])[:2]
-                    _aid = _act["id"]
-                    st.markdown(
-                        f"<div style='background:{_ac};color:{_tc};"
-                        "padding:4px 10px;border-radius:4px;font-size:12px;"
-                        "margin-bottom:2px;overflow-wrap:anywhere;"
-                        "word-break:break-word'>"
-                        f"<b>{_ns}</b>&nbsp;&middot;&nbsp;"
-                        f"{html_lib.escape(_day_short)}&nbsp;"
-                        f"{html_lib.escape(_act['start'])}"
-                        f"\u2013{html_lib.escape(_act['end'])}"
-                        "</div>",
-                        unsafe_allow_html=True,
-                    )
-                    # ── Quick-move arrows ◀ ▲ ▼ ▶ ────────────────────────
-                    _new_left = shift_day(_act["day"], -1)
-                    _new_right = shift_day(_act["day"], 1)
-                    _new_up = shift_time(_act["start"], _act["end"], -15)
-                    _new_down = shift_time(_act["start"], _act["end"], 15)
-                    _mc = st.columns(4)
-                    with _mc[0]:
-                        st.button(
-                            "◀",
-                            key=f"ml_{_aid}",
-                            disabled=_new_left is None,
-                            on_click=_move_activity,
-                            args=(_aid, "day", _new_left),
-                        )
-                    with _mc[1]:
-                        st.button(
-                            "▲",
-                            key=f"mu_{_aid}",
-                            disabled=_new_up is None,
-                            on_click=_move_activity,
-                            args=(_aid, "time", _new_up),
-                        )
-                    with _mc[2]:
-                        st.button(
-                            "▼",
-                            key=f"md_{_aid}",
-                            disabled=_new_down is None,
-                            on_click=_move_activity,
-                            args=(_aid, "time", _new_down),
-                        )
-                    with _mc[3]:
-                        st.button(
-                            "▶",
-                            key=f"mr_{_aid}",
-                            disabled=_new_right is None,
-                            on_click=_move_activity,
-                            args=(_aid, "day", _new_right),
-                        )
-                    _eb, _dpb, _db = st.columns(3)
-                    with _eb:
-                        st.button(
-                            t("edit_activity", lang),
-                            key=f"e_{_aid}",
-                            on_click=_edit_activity,
-                            args=(_aid,),
-                            width="stretch",
-                        )
-                    with _dpb:
-                        st.button(
-                            t("duplicate", lang),
-                            key=f"dup_{_aid}",
-                            on_click=_duplicate_activity,
-                            args=(_aid,),
-                            width="stretch",
-                        )
-                    with _db:
-                        st.button(
-                            t("delete", lang),
-                            key=f"d_{_aid}",
-                            on_click=_delete_activity,
-                            args=(_aid,),
-                            width="stretch",
-                        )
-                    st.divider()
-                _confirm = st.checkbox(t("confirm_delete_all", lang), key="chk_del_all")
-                st.button(
-                    t("delete_all", lang),
-                    width="stretch",
-                    key="btn_del_all",
-                    disabled=not _confirm,
-                    on_click=_delete_all_activities,
-                )
-
-        # ── Vorlagen / Templates ───────────────────────────────────────────────
+        # ── Vorlagen / Templates ─────────────────────────────────────────────
         _tpl_open = not acts
         with st.expander(t("templates", lang), expanded=_tpl_open):
             tpl_names = get_template_names(lang)
@@ -736,6 +827,7 @@ def main() -> None:
                     if tpl_acts:
                         st.session_state.activities = tpl_acts
                         save_activities(tpl_acts)
+                        _reset_form_keys()
                         st.toast(f"{t('template_loaded', lang)} {tpl_names[sel_tpl]}")
                         st.rerun()
                 if acts:
@@ -750,7 +842,7 @@ def main() -> None:
                 on_click=_new_plan,
             )
 
-        # ── PDF erzeugen ─────────────────────────────────────────────────────────
+        # ── PDF erzeugen ─────────────────────────────────────────────────────
         with st.expander(t("generate_pdf", lang), expanded=False):
             _new_title = st.text_input(
                 t("plan_title", lang), st.session_state.plan_title, key="pti"
@@ -760,10 +852,31 @@ def main() -> None:
                 _ls_counter = st.session_state.get("_ls_wc", 0) + 1
                 st.session_state._ls_wc = _ls_counter
                 ls_save("title", _new_title, f"title_{_ls_counter}")
-            fmt = st.radio(t("format", lang), ["DIN A4", "DIN A5"], horizontal=True)
+
+            _new_plan_note = st.text_area(
+                t("plan_note", lang),
+                st.session_state.plan_note,
+                height=80,
+                key="inp_plan_note",
+                placeholder=t("plan_note_placeholder", lang),
+            )
+            if _new_plan_note != st.session_state.plan_note:
+                st.session_state.plan_note = _new_plan_note
+                _ls_counter = st.session_state.get("_ls_wc", 0) + 1
+                st.session_state._ls_wc = _ls_counter
+                ls_save("plan_note", _new_plan_note, f"pnote_{_ls_counter}")
+
+            fmt = st.radio(
+                t("format", lang), ["DIN A4", "DIN A5"],
+                horizontal=True, key="pdf_fmt",
+            )
             with st.expander(t("time_range", lang), expanded=False):
-                sh_s = st.slider(t("start_hour", lang), 0, 23, START_HOUR)
-                eh_s = st.slider(t("end_hour", lang), 1, 24, END_HOUR)
+                sh_s = st.slider(
+                    t("start_hour", lang), 0, 23, START_HOUR, key="pdf_sh"
+                )
+                eh_s = st.slider(
+                    t("end_hour", lang), 1, 24, END_HOUR, key="pdf_eh"
+                )
             if st.button(
                 t("generate_pdf", lang),
                 width="stretch",
@@ -784,6 +897,7 @@ def main() -> None:
                             end_hour=eh_s,
                             title=st.session_state.plan_title,
                             lang=lang,
+                            plan_note=st.session_state.plan_note,
                         )
             if st.session_state.pdf_bytes is not None:
                 _slug = slugify(st.session_state.plan_title)
@@ -825,16 +939,12 @@ def main() -> None:
 
         # ── Dateiverwaltung ──────────────────────────────────────────────────
         with st.expander(t("file_mgmt", lang), expanded=False):
-            # JSON-Import
             uploaded = st.file_uploader(
                 t("import_json", lang),
                 type=["json"],
                 key="json_upload",
             )
             if uploaded is not None:
-                # Guard: process each unique file only once.
-                # st.file_uploader keeps the reference across reruns, so without
-                # this check the file would be re-imported on every render cycle.
                 _fp = f"{uploaded.name}_{uploaded.size}"
                 if st.session_state.get("_last_upload_fp") != _fp:
                     st.session_state._last_upload_fp = _fp
@@ -849,6 +959,7 @@ def main() -> None:
                                     st.session_state.activities = valid
                                     _sync_prefs_from_activities(valid)
                                     save_activities(valid)
+                                    _reset_form_keys()
                                     st.toast(
                                         f"{len(valid)} {t('activities_imported', lang)}"
                                     )
@@ -860,7 +971,6 @@ def main() -> None:
                         except json.JSONDecodeError:
                             st.error(t("invalid_json", lang))
 
-            # CSV-Export
             if acts:
                 st.divider()
                 st.download_button(
@@ -877,31 +987,50 @@ def main() -> None:
 
     with tab1:
         _th = (
-            "<h2 style='text-align:center;margin-bottom:12px;"
+            "<h2 style='text-align:center;margin-bottom:4px;"
             "font-weight:600;letter-spacing:.02em'>"
             + html_lib.escape(st.session_state.plan_title)
             + "</h2>"
         )
+        _pn = st.session_state.plan_note.strip()
+        if _pn:
+            _pn_display = _pn[:100] + ("…" if len(_pn) > 100 else "")
+            _th += (
+                "<p style='text-align:center;font-size:.82rem;"
+                "color:#888;margin-bottom:8px'>"
+                + html_lib.escape(_pn_display)
+                + "</p>"
+            )
+        else:
+            _th += "<div style='margin-bottom:12px'></div>"
         st.markdown(_th, unsafe_allow_html=True)
+
+        ea = st.session_state.edit_mode
         _editing_id = ea["id"] if ea else ""
-        components.html(
-            render_calendar(
-                json.dumps(acts, ensure_ascii=False),
-                START_HOUR,
-                END_HOUR,
-                _today=datetime.now().strftime("%Y-%m-%d"),
-                lang=lang,
-                editing_id=_editing_id,
-            ),
-            height=int((END_HOUR - START_HOUR) * 60 * PX_PER_MIN) + 60,
-            scrolling=False,
+        _cal_height = int((END_HOUR - START_HOUR) * 60 * PX_PER_MIN) + 60
+        _cal_html = render_calendar(
+            json.dumps(acts, ensure_ascii=False),
+            START_HOUR,
+            END_HOUR,
+            _today=datetime.now().strftime("%Y-%m-%d"),
+            lang=lang,
+            editing_id=_editing_id,
+            component_mode=True,
         )
+        cal_event = calendar_component(
+            calendar_html=_cal_html,
+            height=_cal_height,
+            key="cal",
+        )
+        if cal_event and cal_event.get("action") == "edit":
+            _edit_activity(cal_event["id"])
+            st.rerun()
+
         if not acts:
             st.caption(t("add_first", lang))
 
     with tab2:
-        st.markdown(f"## {t('time_dist', lang)}")
-        render_statistics(acts, lang)
+        _statistics_fragment(acts, lang)
 
 
 if __name__ == "__main__":
