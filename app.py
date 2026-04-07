@@ -531,10 +531,9 @@ def _activity_form() -> None:
                 st.rerun()
 
 
-# ── Entries list fragment ────────────────────────────────────────────────────
-@st.fragment
+# ── Entries list ─────────────────────────────────────────────────────────────
 def _entries_fragment() -> None:
-    """Fragment for the sorted activity list with action buttons."""
+    """Sorted activity list with action buttons."""
     acts: list[Activity] = st.session_state.activities
     lang: Lang = st.session_state.lang
 
