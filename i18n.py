@@ -129,7 +129,7 @@ TRANSLATIONS: dict[Lang, dict[str, str]] = {
         "note": "Notiz",
         "note_placeholder": "z.B. Raum, Hinweise…",
         "plan_note": "Plan-Notiz",
-        "plan_note_placeholder": "ausreichend trinken und Gas geben!",
+        "plan_note_placeholder": "Mus nicht schmecken, muss wirken!",
         # PDF footer
         "pdf_footer": "Wochenplaner – kostenlos erstellt",
     },
