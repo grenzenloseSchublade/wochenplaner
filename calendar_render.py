@@ -64,7 +64,7 @@ def _ctx_menu_js(edit_label: str, component_mode: bool = False) -> str:
         edit_action = (
             "    var id=el.getAttribute('data-id');"
             "    if(id && window.Streamlit){"
-            "      window.Streamlit.setComponentValue({action:'edit',id:id});"
+            "      window.Streamlit.setComponentValue({action:'edit',id:id,ts:Date.now()});"
             "    }"
         )
     else:

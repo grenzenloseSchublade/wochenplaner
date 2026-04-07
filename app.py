@@ -334,7 +334,9 @@ def _edit_activity(act_id: str) -> None:
 def _delete_all_activities() -> None:
     """on_click callback – delete all activities."""
     st.session_state.activities = []
+    st.session_state.edit_mode = None
     save_activities([])
+    _reset_form_keys()
 
 
 def _duplicate_activity(act_id: str) -> None:
@@ -803,7 +805,7 @@ def main() -> None:
         # ── Activity form (fragment – only reruns itself on widget change) ──
         _activity_form()
 
-        # ── Entries list (fragment) ──────────────────────────────────────────
+        # ── Entries list ─────────────────────────────────────────────────────
         _entries_fragment()
 
         # ── Vorlagen / Templates ─────────────────────────────────────────────
@@ -1023,8 +1025,11 @@ def main() -> None:
             key="cal",
         )
         if cal_event and cal_event.get("action") == "edit":
-            st.session_state._pending_cal_edit = cal_event["id"]
-            st.rerun()
+            _ts = cal_event.get("ts")
+            if _ts and _ts != st.session_state.get("_cal_event_ts"):
+                st.session_state._cal_event_ts = _ts
+                st.session_state._pending_cal_edit = cal_event["id"]
+                st.rerun()
 
         if not acts:
             st.caption(t("add_first", lang))
