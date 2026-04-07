@@ -1,9 +1,9 @@
 # Wochenplaner / Weekly Planner
 
-Kostenloser visueller Wochenplaner mit **PDF-Export** und **CSV-Export** –
+Kostenloser visueller Wochenplaner mit **PDF-Export**, **CSV-Export** und **Notizen** –
 ohne Anmeldung, ohne Tracking, Open Source.
 
-Free visual weekly schedule planner with **PDF export** and **CSV export** –
+Free visual weekly schedule planner with **PDF export**, **CSV export** and **notes** –
 no account, no tracking, open source.
 
 > **Kostenlose Alternative zu tryschedule.com** – PDF-Export dort ab $4.90/Woche,
@@ -40,19 +40,21 @@ Opens http://localhost:8501 in your browser automatically.
 | **Proportionale Zeitblöcke** | 4h-Block doppelt so groß wie 2h | 4h block twice as tall as 2h |
 | **PDF-Export (kostenlos)** | DIN A4 / A5 Querformat | DIN A4 / A5 landscape |
 | **CSV-Export** | Für Excel / Google Sheets | For Excel / Google Sheets |
+| **Notizen (pro Eintrag)** | 2-zeilige Notiz pro Aktivität, sichtbar im Kontextmenü | 2-line note per activity, visible in context menu |
+| **Notizen (Plan-Ebene)** | Mehrzeilige Notiz für den gesamten Wochenplan | Multi-line note for the whole week |
+| **PDF-Notizen (Sticky Notes)** | Eintrag-Notizen als klickbare PDF-Annotations | Activity notes as clickable PDF annotations |
+| **Kalender-Direktbearbeitung** | Klick auf Block → Bearbeiten ohne Seitenreload | Click block → edit without page reload |
 | **Zweisprachig** | Deutsch + Englisch | German + English |
 | **Vorlagen** | Student, Fitness, Büro, Schichtplan, Beispiel | Student, Fitness, Office, Shift, Example |
 | **Plan teilen** | Per URL-Link (kein Backend) | Via URL link (no backend) |
 | **JSON-Download** | Plan als Datei speichern & importieren | Save plan as file & import |
 | **Farb-Gedächtnis** | Farbe pro Aktivität wird gespeichert | Color saved per activity name |
-| **Eigene Aktivitäten** | Bleiben als Dropdown-Optionen erhalten | Persist as dropdown options |
+| **Eigene Aktivitäten** | Freie Namen + Farbwahl, bleiben erhalten | Custom names + color picker, persisted |
 | **15-Min-Raster** | Viertelstunden-Genauigkeit | Quarter-hour precision |
-| **Eigene Aktivitäten** | Freie Namen + Farbwahl | Custom names + color picker |
 | **Überlappungswarnung** | Zeitkonflikte erkennen | Detect time conflicts |
 | **Sortierte Einträge** | Nach Tag + Uhrzeit | By day + time |
-| **JSON-Import/Export** | Pläne laden/speichern | Load/save plans |
-| **Browser-Speicher** | Daten bleiben im Browser | Data persists in browser |
-| **Dark Mode** | Standard, umschaltbar | Default, switchable |
+| **Browser-Speicher** | Daten bleiben im Browser (LocalStorage) | Data persists in browser (LocalStorage) |
+| **Dark Mode** | Automatisch, umschaltbar | Automatic, switchable |
 | **Quick-Move** | Pfeiltasten in der Sidebar | Arrow buttons in sidebar |
 | **Statistik** | Zeitverteilung als Balkendiagramm | Time distribution bar chart |
 | **Datenschutz** | Alle Daten im Browser | All data in browser |
@@ -64,6 +66,7 @@ Opens http://localhost:8501 in your browser automatically.
 |---|:---:|:---:|:---:|
 | PDF Export | ✅ kostenlos | ❌ | ✅ ab $4.90/Wo |
 | CSV Export | ✅ kostenlos | ❌ | ✅ ab $9.90/Mo |
+| Notizen + PDF-Annotations | ✅ | ❌ | ❌ |
 | Vorlagen/Templates | ✅ | ❌ | ✅ |
 | Kein Account nötig | ✅ | ✅ | ❌ |
 | Datenschutz/DSGVO | ✅ kein Tracking | ❌ 211 Ad-Partner | ❌ |
@@ -77,28 +80,56 @@ Opens http://localhost:8501 in your browser automatically.
 
 ```
 wochenplaner/
-├── app.py              # Streamlit UI (main entry point)
-├── constants.py        # Shared constants (days, colors, paths)
-├── utils.py            # Utilities (time conversion, validation)
-├── calendar_render.py  # Calendar HTML/CSS/JS rendering
-├── pdf_export.py       # PDF generation (reportlab)
-├── i18n.py             # Translations DE/EN
-├── templates.py        # Predefined weekly plan templates
-├── storage.py          # Browser LocalStorage abstraction
-├── pyproject.toml      # Dependencies (uv)
-├── .python-version     # Python 3.13 (Streamlit Cloud)
+├── app.py                          # Streamlit UI (main entry point)
+├── constants.py                    # Shared constants (days, colors, paths)
+├── utils.py                        # Utilities (time conversion, validation)
+├── calendar_render.py              # Calendar HTML/CSS/JS rendering
+├── calendar_component/             # Bidirectional Streamlit component
+│   ├── __init__.py                 # Python wrapper (declare_component)
+│   └── frontend/
+│       └── index.html              # Component iframe (Streamlit ↔ JS bridge)
+├── pdf_export.py                   # PDF generation (reportlab) + annotations
+├── i18n.py                         # Translations DE/EN
+├── templates.py                    # Predefined weekly plan templates
+├── storage.py                      # Browser LocalStorage abstraction
+├── pyproject.toml                  # Dependencies (uv)
+├── .python-version                 # Python 3.13 (Streamlit Cloud)
 ├── README.md
 ├── static/
-│   └── calendar.css    # Calendar stylesheet (dark mode support)
+│   └── calendar.css                # Calendar stylesheet (dark mode support)
 ├── .streamlit/
-│   └── config.toml     # Streamlit config (theme, analytics)
-├── .devcontainer/      # VS Code DevContainer config
+│   └── config.toml                 # Streamlit config (theme, analytics)
+├── .devcontainer/                  # VS Code DevContainer config
 │   ├── Dockerfile
 │   ├── devcontainer.json
 │   └── post-create.sh
 └── data/
-    └── plans/          # Exported PDFs (local only)
+    └── plans/                      # Exported PDFs (local only)
 ```
+
+---
+
+## Architektur / Architecture
+
+### Kalender-Komponente
+
+Der Kalender ist als **bidirektionale Streamlit-Komponente** (`declare_component`) implementiert.
+Klicks auf Aktivitätsblöcke kommunizieren direkt über `postMessage` an das Python-Backend,
+ohne einen vollständigen Browser-Reload auszulösen.
+
+### Performance-Optimierungen
+
+- **`@st.fragment`** auf dem Eingabeformular: Widget-Interaktionen (Dropdown, Farbwahl) lösen nur einen isolierten Fragment-Rerun aus
+- **`@st.fragment`** auf dem Statistik-Tab: Plotly-Chart wird nicht bei jeder Sidebar-Aktion neu gerendert
+- **Stabile Widget-Keys**: Alle Formular-Widgets haben explizite, unveränderliche `key`-Parameter
+- **Session-State-Verwaltung**: Formularwerte werden zentral verwaltet und nach dem Speichern bereinigt
+
+### Notizen im PDF
+
+Eintrag-Notizen werden als **PDF Text-Annotations (Sticky Notes)** exportiert.
+Diese sind im PDF-Reader als kleine Icons sichtbar und zeigen den Notiztext als Popup beim Klick.
+Das Kalender-Layout bleibt dabei unverändert.
+Die Plan-Notiz wird als sichtbarer Untertitel unter dem Titel gerendert.
 
 ---
 
@@ -108,10 +139,20 @@ wochenplaner/
 1. Aktivität wählen oder eigene anlegen / Choose or create custom activity
 2. Farbe anpassen / Adjust color
 3. Tag + Zeitraum wählen (15-Min-Raster) / Pick day + time range (15-min grid)
-4. „Hinzufügen" klicken / Click "Add"
+4. Optional: Notiz hinzufügen (2-zeilig) / Optionally add a note (2 lines)
+5. „Hinzufügen" klicken / Click "Add"
+
+### Kalender-Bearbeitung / Calendar editing
+- Klick auf einen Block im Kalender öffnet das Kontextmenü mit Notiz-Vorschau
+- „Bearbeiten" öffnet das Formular mit vorausgefüllten Werten (kein Seitenreload)
+
+### Notizen / Notes
+- **Eintrag-Notiz**: Pro Aktivität ein 2-zeiliges Textfeld (z.B. „Raum 204, mit Max")
+- **Plan-Notiz**: Mehrzeiliges Feld im PDF-Bereich (z.B. „KW 15 – Urlaubswoche")
+- Beide Notiz-Typen werden in JSON, CSV, URL-Sharing und PDF exportiert
 
 ### Plan speichern & laden / Save & load
-- 💾 **Plan speichern (JSON)** → Datei auf Gerät speichern (manuelle Versionierung)
+- **Plan speichern (JSON)** → Datei auf Gerät speichern
 - Dateiverwaltung → **JSON importieren** → gespeicherte Datei laden
 
 ### Vorlagen / Templates
@@ -124,11 +165,13 @@ wochenplaner/
 
 ### PDF-Export
 1. Format: DIN A4 oder A5 (Querformat)
-2. Titel eingeben
+2. Titel + Plan-Notiz eingeben
 3. „PDF erzeugen" → „PDF herunterladen"
+4. Eintrag-Notizen erscheinen als klickbare Sticky-Note-Icons im PDF
 
 ### CSV-Export
 - Sidebar → Dateiverwaltung → „CSV exportieren"
+- Enthält Notiz-Spalte
 
 ---
 
@@ -165,6 +208,9 @@ uv run ruff format .
 ## Nächste Schritte / Next Steps
 
 - [x] **Streamlit Community Cloud Deployment** – Repository verbinden, App deployen
+- [x] **Notizen** – Pro Eintrag (2-zeilig) + Plan-Ebene (mehrzeilig) + PDF-Annotations
+- [x] **Kalender-Direktbearbeitung** – Bidirektionale Komponente, kein Browser-Reload
+- [x] **Performance-Optimierung** – Fragment-Isolierung, stabile Widget-Keys
 - [ ] **Drag & Drop** – Zeitblöcke per Drag verschieben/resizen
 - [ ] **ICS/iCal Import** – Google Calendar / Outlook Export einlesen
 - [ ] **Print CSS** – `@media print` für direkte Browser-Druckfunktion

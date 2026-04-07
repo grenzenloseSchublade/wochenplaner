@@ -34,13 +34,57 @@ def _pdf_escape(text: str) -> str:
     return text.replace("\\", "\\\\").replace("(", "\\(").replace(")", "\\)")
 
 
-def _truncate_text(text: str, font: str, size: float, max_w: float) -> str:
-    """Shorten *text* so it fits within *max_w* points, appending '…' if truncated."""
+def _truncate_line(text: str, font: str, size: float, max_w: float) -> str:
+    """Shorten a single line to fit *max_w*, appending '…' if needed."""
     if stringWidth(text, font, size) <= max_w:
         return text
     while len(text) > 1 and stringWidth(text + "…", font, size) > max_w:
         text = text[:-1]
     return text.rstrip() + "…"
+
+
+def _wrap_text(
+    text: str, font: str, size: float, max_w: float, max_lines: int
+) -> list[str]:
+    """Word-wrap *text* into at most *max_lines* lines of width *max_w*.
+
+    The last line is truncated with '…' if the text still overflows.
+    """
+    if stringWidth(text, font, size) <= max_w:
+        return [text]
+
+    words = text.split()
+    lines: list[str] = []
+    current = ""
+
+    for word in words:
+        test = f"{current} {word}".strip()
+        if stringWidth(test, font, size) <= max_w:
+            current = test
+        else:
+            if current:
+                lines.append(current)
+            current = word
+            if len(lines) >= max_lines:
+                break
+    if current and len(lines) < max_lines:
+        lines.append(current)
+
+    if not lines:
+        lines = [_truncate_line(text, font, size, max_w)]
+
+    if len(lines) > max_lines:
+        lines = lines[:max_lines]
+
+    remaining_words = words[sum(len(l.split()) for l in lines) :]
+    if remaining_words:
+        lines[-1] = _truncate_line(lines[-1], font, size, max_w)
+
+    for i, line in enumerate(lines):
+        if stringWidth(line, font, size) > max_w:
+            lines[i] = _truncate_line(line, font, size, max_w)
+
+    return lines
 
 
 def generate_pdf(
@@ -76,6 +120,10 @@ def generate_pdf(
 
     buf = io.BytesIO()
     c = canvas.Canvas(buf, pagesize=page_size)
+    c.setTitle(title)
+    c.setAuthor("Wochenplaner")
+    c.setSubject("Wochenplan / Weekly Schedule")
+    c.setCreator("Wochenplaner – github.com/grenzenloseSchublade/wochenplaner")
 
     # ── Hintergrund ──────────────────────────────────────────────────────────
     c.setFillColor(HexColor("#FAFAFA"))
@@ -196,21 +244,39 @@ def generate_pdf(
         dur_str = f"{dh}h {dm}min" if dh and dm else f"{dh}h" if dh else f"{dm}min"
 
         max_text_w = w - 4
+        cx = x + w / 2
 
         if height >= 18:
             fs = min(7.5, height * 0.28)
             fs = max(fs, 5.5)
+            lh = fs * 1.25
+            show_dur = height >= 28
+            dur_fs = max(fs - 1, 4.5)
+            dur_h = (dur_fs * 1.3) if show_dur else 0
+            avail_name_h = height - 6 - dur_h
+            max_lines = max(1, int(avail_name_h / lh))
+
             c.setFont("Helvetica-Bold", fs)
-            draw_name = _truncate_text(name, "Helvetica-Bold", fs, max_text_w)
-            c.drawCentredString(x + w / 2, y + height / 2 + fs * 0.2, draw_name)
-            if height >= 28:
-                c.setFont("Helvetica", max(fs - 1, 4.5))
+            name_lines = _wrap_text(name, "Helvetica-Bold", fs, max_text_w, max_lines)
+
+            block_h = len(name_lines) * lh + dur_h
+            top_y = y + height / 2 + block_h / 2 - fs * 0.2
+
+            for li, line in enumerate(name_lines):
+                c.setFont("Helvetica-Bold", fs)
                 c.setFillColor(tc)
-                c.drawCentredString(x + w / 2, y + height / 2 - fs * 1.1, dur_str)
+                c.drawCentredString(cx, top_y - li * lh, line)
+
+            if show_dur:
+                c.setFont("Helvetica", dur_fs)
+                c.setFillColor(tc)
+                c.drawCentredString(
+                    cx, top_y - len(name_lines) * lh - dur_fs * 0.15, dur_str
+                )
         else:
             c.setFont("Helvetica-Bold", 5)
-            draw_name = _truncate_text(name, "Helvetica-Bold", 5, max_text_w)
-            c.drawCentredString(x + w / 2, y + height / 2 - 2, draw_name)
+            draw_name = _truncate_line(name, "Helvetica-Bold", 5, max_text_w)
+            c.drawCentredString(cx, y + height / 2 - 2, draw_name)
 
         # ── PDF Text Annotation (Sticky Note) for activity notes ─────────
         note_text = act.get("note", "").strip()
