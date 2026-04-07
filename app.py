@@ -66,6 +66,7 @@ _FORM_KEYS = (
     "chk_custom",
     "custom_name",
     "_form_prev_name",
+    "_prev_from",
 )
 
 
@@ -316,12 +317,12 @@ def _edit_activity(act_id: str) -> None:
             all_preset = set(AKTIVITAETEN_FARBEN) | set(
                 st.session_state.get("custom_activities", [])
             )
+            st.session_state.custom_name = nm
             if nm in all_preset:
                 st.session_state.chk_custom = False
                 st.session_state.sel_activity = nm
             else:
                 st.session_state.chk_custom = True
-                st.session_state.custom_name = nm
             st.session_state.sel_day = DAY_DISPLAY[lang].get(a["day"], a["day"])
             st.session_state.sel_from = a["start"]
             st.session_state.sel_to = a["end"]
@@ -416,11 +417,12 @@ def _activity_form() -> None:
                 t("activity", lang), all_names, key="sel_activity"
             )
 
-        # Auto-update color when activity name changes
+        # Auto-update color only when a *preset* activity is selected in add mode.
+        # Custom names (typed char-by-char) and edit mode never auto-change the color.
         _prev_name = st.session_state.get("_form_prev_name")
         if name and name != _prev_name:
             st.session_state._form_prev_name = name
-            if not ea:
+            if not ea and not use_custom:
                 mapped = st.session_state.activity_colors.get(
                     name, AKTIVITAETEN_FARBEN.get(name, "#F3E5AB")
                 )
@@ -441,7 +443,19 @@ def _activity_form() -> None:
                 else TIME_OPTIONS
             )
             if "sel_to" in st.session_state and st.session_state.sel_to not in bo:
-                del st.session_state["sel_to"]
+                _old_from = st.session_state.get("_prev_from")
+                _old_to = st.session_state.sel_to
+                if _old_from and _old_to:
+                    _dur = t2m(_old_to) - t2m(_old_from)
+                    _new_to_m = t2m(von) + _dur
+                    _new_to = f"{_new_to_m // 60:02d}:{_new_to_m % 60:02d}"
+                    if _dur > 0 and _new_to in bo:
+                        st.session_state.sel_to = _new_to
+                    else:
+                        del st.session_state["sel_to"]
+                else:
+                    del st.session_state["sel_to"]
+            st.session_state._prev_from = von
             bis = st.selectbox(t("to_time", lang), bo, key="sel_to")
 
         note = st.text_area(
