@@ -1004,7 +1004,7 @@ def main() -> None:
         st.markdown(
             "<div style='text-align:center;padding:16px 0 4px;"
             "font-size:11px;color:#aaa;letter-spacing:.02em'>"
-            "v1.1.0 · "
+            "v1.1.1 · "
             "<a href='https://github.com/grenzenloseSchublade/wochenplaner'"
             " target='_blank' style='color:#888;text-decoration:none'>"
             "GitHub</a></div>",

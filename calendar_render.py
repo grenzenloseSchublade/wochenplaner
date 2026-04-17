@@ -163,9 +163,10 @@ def _activity_block(
         f"{act['start']}\u2013{act['end']} · {act['name']}"
     )
     parts: list[str] = []
-    if ht >= 22:
-        parts.append(f'<span class="act-time">{s}\u2013{e}</span>')
+    # Zeit erst ab genug Höhe (sonst nur Titel im Band 22–27 px sichtbar)
     if ht >= 28:
+        parts.append(f'<span class="act-time">{s}\u2013{e}</span>')
+    if ht >= 22:
         parts.append(f'<span class="act-name">{n}</span>')
     if ht >= 38:
         parts.append(f'<span class="act-dur">{ds}</span>')
