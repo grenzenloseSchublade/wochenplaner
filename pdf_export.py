@@ -112,6 +112,7 @@ def _draw_activity_text(
     start_str: str,
     dur_min: int,
     max_text_w: float,
+    show_block_times: bool = True,
 ) -> None:
     """Startzeit oben links, Name darunter im Restbereich vertikal zentriert; Clipping."""
     cx = x + w / 2
@@ -127,6 +128,7 @@ def _draw_activity_text(
     show_corner = (
         height >= MIN_HEIGHT_FOR_CORNER_PT and max_inner >= reserved_corner_est
     )
+    draw_corner = show_corner and show_block_times
 
     c.saveState()
     path = c.beginPath()
@@ -156,7 +158,7 @@ def _draw_activity_text(
         return
 
     reserved_corner = (
-        corner_fs * 1.15 + CORNER_PAD_PT + 1.5 if show_corner else 0.0
+        corner_fs * 1.15 + CORNER_PAD_PT + 1.5 if draw_corner else 0.0
     )
 
     fs = max(5.0, min(7.5, height * 0.2))
@@ -199,7 +201,7 @@ def _draw_activity_text(
         name_lines = [_truncate_line(name, "Helvetica-Bold", fs, max_text_w)]
         content_h = lh
 
-    if show_corner:
+    if draw_corner:
         c.setFont("Helvetica-Bold", corner_fs)
         c.setFillColor(tc)
         time_baseline = inner_top - corner_fs * 0.78
@@ -247,6 +249,9 @@ def generate_pdf(
     title: str = "Wochenplan",
     lang: Lang = "de",
     plan_note: str = "",
+    *,
+    show_axis_times: bool = True,
+    show_block_times: bool = True,
 ) -> bytes:
     page_size = landscape(A4) if paper_format == "A4" else landscape(A5)
     page_w, page_h = page_size
@@ -327,10 +332,11 @@ def generate_pdf(
         c.setLineWidth(0.4)
         c.line(grid_x, y, grid_x + grid_w, y)
 
-        c.setFillColor(HexColor("#888888"))
-        c.setFont("Helvetica", 5.5)
-        c.drawRightString(grid_x - LABEL_PAD_MM, y - 1.5, f"{h:02d}:00")
-        c.drawString(label_x_right, y - 1.5, f"{h:02d}:00")
+        if show_axis_times:
+            c.setFillColor(HexColor("#888888"))
+            c.setFont("Helvetica", 5.5)
+            c.drawRightString(grid_x - LABEL_PAD_MM, y - 1.5, f"{h:02d}:00")
+            c.drawString(label_x_right, y - 1.5, f"{h:02d}:00")
 
         if h < end_hour:
             yh = y - 30 * pt_per_min
@@ -403,6 +409,7 @@ def generate_pdf(
             start_str=start_display,
             dur_min=dur_min,
             max_text_w=max_text_w,
+            show_block_times=show_block_times,
         )
 
         note_text = act.get("note", "").strip()

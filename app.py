@@ -896,6 +896,18 @@ def main() -> None:
                 eh_s = st.slider(
                     t("end_hour", lang), 1, 24, END_HOUR, key="pdf_eh"
                 )
+            show_axis_times = st.checkbox(
+                t("pdf_show_axis_times", lang),
+                value=True,
+                key="pdf_axis_times",
+                help=t("pdf_show_axis_times_help", lang),
+            )
+            show_block_times = st.checkbox(
+                t("pdf_show_block_times", lang),
+                value=True,
+                key="pdf_block_times",
+                help=t("pdf_show_block_times_help", lang),
+            )
             if st.button(
                 t("generate_pdf", lang),
                 width="stretch",
@@ -917,6 +929,8 @@ def main() -> None:
                             title=st.session_state.plan_title,
                             lang=lang,
                             plan_note=st.session_state.plan_note,
+                            show_axis_times=show_axis_times,
+                            show_block_times=show_block_times,
                         )
             if st.session_state.pdf_bytes is not None:
                 _slug = slugify(st.session_state.plan_title)
@@ -1004,7 +1018,7 @@ def main() -> None:
         st.markdown(
             "<div style='text-align:center;padding:16px 0 4px;"
             "font-size:11px;color:#aaa;letter-spacing:.02em'>"
-            "v1.1.1 · "
+            "v1.2 · "
             "<a href='https://github.com/grenzenloseSchublade/wochenplaner'"
             " target='_blank' style='color:#888;text-decoration:none'>"
             "GitHub</a></div>",

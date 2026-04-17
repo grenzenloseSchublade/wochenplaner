@@ -84,6 +84,63 @@ class TestPdfExport(unittest.TestCase):
         self.assertGreater(len(data), 500)
         self.assertTrue(data.startswith(b"%PDF"))
 
+    def test_axis_times_off_block_times_on(self) -> None:
+        activities = [
+            {
+                "day": "Montag",
+                "start": "09:00",
+                "end": "10:00",
+                "name": "Block",
+                "color": "#F3E5AB",
+                "id": "a",
+            },
+        ]
+        data = generate_pdf(
+            activities,
+            paper_format="A4",
+            show_axis_times=False,
+            show_block_times=True,
+        )
+        self.assertTrue(data.startswith(b"%PDF"))
+
+    def test_axis_times_on_block_times_off(self) -> None:
+        activities = [
+            {
+                "day": "Dienstag",
+                "start": "11:00",
+                "end": "12:00",
+                "name": "Ohne Ecke",
+                "color": "#FFB6B6",
+                "id": "b",
+            },
+        ]
+        data = generate_pdf(
+            activities,
+            paper_format="A4",
+            show_axis_times=True,
+            show_block_times=False,
+        )
+        self.assertTrue(data.startswith(b"%PDF"))
+
+    def test_both_time_displays_off(self) -> None:
+        activities = [
+            {
+                "day": "Mittwoch",
+                "start": "14:00",
+                "end": "15:00",
+                "name": "Minimal",
+                "color": "#A8D8E8",
+                "id": "c",
+            },
+        ]
+        data = generate_pdf(
+            activities,
+            paper_format="A4",
+            show_axis_times=False,
+            show_block_times=False,
+        )
+        self.assertTrue(data.startswith(b"%PDF"))
+
 
 if __name__ == "__main__":
     unittest.main()

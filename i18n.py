@@ -85,6 +85,10 @@ TRANSLATIONS: dict[Lang, dict[str, str]] = {
         "no_activities": "Keine Aktivitäten vorhanden.",
         "start_lt_end": "Startzeit muss kleiner als Endzeit sein.",
         "download_pdf": "PDF herunterladen",
+        "pdf_show_axis_times": "Uhrzeiten am Planrand",
+        "pdf_show_axis_times_help": "Stunden (HH:00) links und rechts neben dem Raster.",
+        "pdf_show_block_times": "Startzeiten in den Blöcken",
+        "pdf_show_block_times_help": "Startzeit oben links in jedem farbigen Termin.",
         # File management
         "file_mgmt": "Dateiverwaltung",
         "import_json": "JSON importieren",
@@ -170,6 +174,10 @@ TRANSLATIONS: dict[Lang, dict[str, str]] = {
         "no_activities": "No activities yet.",
         "start_lt_end": "Start time must be less than end time.",
         "download_pdf": "Download PDF",
+        "pdf_show_axis_times": "Times on planning grid edge",
+        "pdf_show_axis_times_help": "Hour labels (HH:00) left and right of the grid.",
+        "pdf_show_block_times": "Start times in blocks",
+        "pdf_show_block_times_help": "Start time in the top-left of each activity block.",
         # File management
         "file_mgmt": "File management",
         "import_json": "Import JSON",
