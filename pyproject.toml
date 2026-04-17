@@ -1,6 +1,6 @@
 [project]
 name = "wochenplaner"
-version = "1.0.0"
+version = "1.1.0"
 description = "Kostenloser Wochenplaner mit PDF-Export | Free weekly planner with PDF export"
 readme = "README.md"
 requires-python = ">=3.13"

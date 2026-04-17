@@ -159,15 +159,24 @@ def _activity_block(
     note_raw = act.get("note", "")
     note_attr = f' data-note="{html_lib.escape(note_raw)}"' if note_raw else ""
     note_icon = '<span class="act-note-icon">&#9998;</span>' if note_raw else ""
-    body = f'<span class="act-name">{n}</span>'
-    if ht > 30:
-        body += f'<span class="act-dur">{ds}</span>'
+    title_attr = html_lib.escape(
+        f"{act['start']}\u2013{act['end']} · {act['name']}"
+    )
+    parts: list[str] = []
+    if ht >= 22:
+        parts.append(f'<span class="act-time">{s}\u2013{e}</span>')
+    if ht >= 28:
+        parts.append(f'<span class="act-name">{n}</span>')
+    if ht >= 38:
+        parts.append(f'<span class="act-dur">{ds}</span>')
+    body = "".join(parts)
     aid = html_lib.escape(act.get("id", ""))
     day = html_lib.escape(act.get("day", ""))
     _is_editing = 'data-editing="true" ' if aid == editing_id and editing_id else ""
     return (
         f'<div class="act-block" '
         f"{_is_editing}"
+        f'title="{title_attr}" '
         f'data-id="{aid}" data-name="{n}" data-day="{day}" '
         f'data-start="{s}" data-end="{e}" data-color="{c}"{note_attr} '
         f'style="top:{top:.1f}px;height:{ht:.1f}px;background:{c};'
@@ -225,6 +234,9 @@ def render_calendar(
         f'    <div class="cal-time-inner" style="height:{total_px}px">{labels}</div>'
         f"  </div>"
         f'  <div class="cal-cols">{day_cols}</div>'
+        f'  <div class="cal-time-col cal-time-col--right">'
+        f'    <div class="cal-time-inner" style="height:{total_px}px">{labels}</div>'
+        f"  </div>"
         f"</div>"
     )
 

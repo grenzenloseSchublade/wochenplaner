@@ -11,11 +11,29 @@ from reportlab.lib.pagesizes import A4, A5, landscape
 from reportlab.lib.units import mm
 from reportlab.pdfbase.pdfdoc import PDFArray, PDFDictionary, PDFString
 from reportlab.pdfbase.pdfmetrics import stringWidth
-from reportlab.pdfgen import canvas
+from reportlab.pdfgen.canvas import Canvas
 
 from constants import WOCHENTAGE
 from i18n import WOCHENTAGE_KURZ_I18N, Lang, t
 from utils import Activity
+
+# Mindestdauer in Minuten, ab der der Aktivitätsname im Block erscheint (nicht nur Ecke/Kurzform)
+MIN_MINUTES_FOR_NAME = 18
+
+BLOCK_PAD_PT = 3.0
+CORNER_PAD_PT = 2.5
+# Ab dieser Blockhöhe (pt) wird die Startzeit oben links gezeichnet (gleich Schwelle wie Mikro)
+MIN_HEIGHT_FOR_CORNER_PT = 12.0
+# Sehr flache Blöcke: nur eine Zeile, Priorität Name (Zeit steht im Raster)
+MICRO_BLOCK_PT = 12.0
+
+LABEL_PAD_MM = 1.0
+
+
+def minutes_to_hhmm(total_minutes: int) -> str:
+    """Minuten seit Mitternacht als HH:MM (für PDF-Ecke = sichtbarer Raster-Start)."""
+    m = max(0, int(total_minutes)) % (24 * 60)
+    return f"{m // 60:02d}:{m % 60:02d}"
 
 
 def _hex_to_color(hex_str: str) -> Color:
@@ -27,11 +45,6 @@ def _text_color(hex_str: str) -> Color:
     from utils import get_text_color
 
     return HexColor(get_text_color(hex_str))
-
-
-def _pdf_escape(text: str) -> str:
-    """Escape special characters for PDF string literals."""
-    return text.replace("\\", "\\\\").replace("(", "\\(").replace(")", "\\)")
 
 
 def _truncate_line(text: str, font: str, size: float, max_w: float) -> str:
@@ -76,7 +89,7 @@ def _wrap_text(
     if len(lines) > max_lines:
         lines = lines[:max_lines]
 
-    remaining_words = words[sum(len(l.split()) for l in lines) :]
+    remaining_words = words[sum(len(ln.split()) for ln in lines) :]
     if remaining_words:
         lines[-1] = _truncate_line(lines[-1], font, size, max_w)
 
@@ -85,6 +98,145 @@ def _wrap_text(
             lines[i] = _truncate_line(line, font, size, max_w)
 
     return lines
+
+
+def _draw_activity_text(
+    c: Canvas,
+    *,
+    x: float,
+    y: float,
+    w: float,
+    height: float,
+    tc: Color,
+    name: str,
+    start_str: str,
+    dur_min: int,
+    max_text_w: float,
+) -> None:
+    """Startzeit oben links, Name darunter im Restbereich vertikal zentriert; Clipping."""
+    cx = x + w / 2
+    pad = BLOCK_PAD_PT
+    max_inner = max(0.0, height - 2 * pad)
+    inner_top = y + height - pad
+    inner_bottom = y + pad
+
+    show_name = dur_min >= MIN_MINUTES_FOR_NAME
+    corner_fs = max(4.5, min(5.5, height * 0.065))
+    reserved_corner_est = corner_fs * 1.15 + CORNER_PAD_PT + 1.5
+    # Ecke unabhängig vom Namensbudget; nur Platz für die Eckzeile selbst nötig
+    show_corner = (
+        height >= MIN_HEIGHT_FOR_CORNER_PT and max_inner >= reserved_corner_est
+    )
+
+    c.saveState()
+    path = c.beginPath()
+    path.rect(x, y, w, height)
+    c.clipPath(path, stroke=0, fill=0)
+    if max_inner < 5.0:
+        c.setFont("Helvetica-Bold", 4.5)
+        c.setFillColor(tc)
+        c.drawCentredString(
+            cx,
+            y + height / 2 - 1.5,
+            _truncate_line(name, "Helvetica-Bold", 4.5, max_text_w),
+        )
+        c.restoreState()
+        return
+
+    if height < MICRO_BLOCK_PT:
+        c.setFont("Helvetica-Bold", max(4.5, min(6.5, height * 0.45)))
+        c.setFillColor(tc)
+        fs0 = max(4.5, min(6.5, height * 0.45))
+        c.drawCentredString(
+            cx,
+            y + height / 2 - fs0 * 0.35,
+            _truncate_line(name, "Helvetica-Bold", fs0, max_text_w),
+        )
+        c.restoreState()
+        return
+
+    reserved_corner = (
+        corner_fs * 1.15 + CORNER_PAD_PT + 1.5 if show_corner else 0.0
+    )
+
+    fs = max(5.0, min(7.5, height * 0.2))
+    name_lines: list[str] = []
+
+    for _ in range(28):
+        lh = fs * 1.18
+        title_zone_top = inner_top - reserved_corner
+        zone_h = max(0.0, title_zone_top - inner_bottom)
+        avail_for_names = zone_h - 2.0
+        max_lines = max(1, min(5, int(avail_for_names / lh))) if show_name else 0
+        if show_name and max_lines > 0:
+            name_lines = _wrap_text(name, "Helvetica-Bold", fs, max_text_w, max_lines)
+        else:
+            name_lines = []
+
+        content_h = len(name_lines) * lh
+        if content_h <= avail_for_names or (fs <= 4.35 and max_lines <= 1):
+            break
+        if max_lines > 1:
+            name_lines = _wrap_text(
+                name, "Helvetica-Bold", fs, max_text_w, max_lines - 1
+            )
+            content_h = len(name_lines) * lh
+            if content_h <= avail_for_names:
+                break
+        fs = max(4.35, fs - 0.3)
+
+    lh = fs * 1.18
+    title_zone_top = inner_top - reserved_corner
+    zone_h = max(0.0, title_zone_top - inner_bottom)
+    content_h = len(name_lines) * lh if name_lines else 0.0
+
+    while name_lines and len(name_lines) * lh > zone_h + 0.5 and len(name_lines) > 1:
+        name_lines = _wrap_text(
+            name, "Helvetica-Bold", fs, max_text_w, len(name_lines) - 1
+        )
+    content_h = len(name_lines) * lh if name_lines else 0.0
+    if name_lines and content_h > zone_h + 0.5:
+        name_lines = [_truncate_line(name, "Helvetica-Bold", fs, max_text_w)]
+        content_h = lh
+
+    if show_corner:
+        c.setFont("Helvetica-Bold", corner_fs)
+        c.setFillColor(tc)
+        time_baseline = inner_top - corner_fs * 0.78
+        c.drawString(x + CORNER_PAD_PT, time_baseline, start_str)
+
+    if show_name and name_lines:
+        safe_content_h = min(content_h, max(0.0, zone_h))
+        first_baseline = title_zone_top - (zone_h - safe_content_h) / 2 - fs * 0.72
+        last_baseline = first_baseline - (len(name_lines) - 1) * lh
+        if last_baseline < inner_bottom + 1.0 or zone_h < fs:
+            nfs = max(4.35, min(fs, 6.5))
+            c.setFont("Helvetica-Bold", nfs)
+            c.setFillColor(tc)
+            c.drawCentredString(
+                cx,
+                y + height / 2 - nfs * 0.35,
+                _truncate_line(name, "Helvetica-Bold", nfs, max_text_w),
+            )
+            c.restoreState()
+            return
+        cur = first_baseline
+        for line in name_lines:
+            c.setFont("Helvetica-Bold", fs)
+            c.setFillColor(tc)
+            c.drawCentredString(cx, cur, line)
+            cur -= lh
+    elif not show_name:
+        nfs = max(4.5, fs - 0.5)
+        c.setFont("Helvetica-Bold", nfs)
+        c.setFillColor(tc)
+        c.drawCentredString(
+            cx,
+            y + height / 2 - nfs * 0.35,
+            _truncate_line(name, "Helvetica-Bold", nfs, max_text_w),
+        )
+
+    c.restoreState()
 
 
 def generate_pdf(
@@ -103,15 +255,16 @@ def generate_pdf(
     mg_l, mg_r, mg_t, mg_b = 12 * mm, 8 * mm, 8 * mm, 8 * mm
     header_h = 10 * mm  # Tagesheader
     title_h = 7 * mm  # Titelzeile
-    time_w = 9 * mm  # Zeitspalte
+    time_w_l = 9 * mm
+    time_w_r = 9 * mm
     footer_h = 4 * mm
 
     plan_note_stripped = plan_note.strip()
     subtitle_h = 4 * mm if plan_note_stripped else 0
 
-    grid_x = mg_l + time_w
+    grid_x = mg_l + time_w_l
     grid_y = mg_b + footer_h
-    grid_w = page_w - mg_l - mg_r - time_w
+    grid_w = page_w - mg_l - mg_r - time_w_l - time_w_r
     grid_h = page_h - mg_t - mg_b - header_h - title_h - subtitle_h - footer_h
 
     col_w = grid_w / 7
@@ -119,7 +272,7 @@ def generate_pdf(
     pt_per_min = grid_h / total_minutes
 
     buf = io.BytesIO()
-    c = canvas.Canvas(buf, pagesize=page_size)
+    c = Canvas(buf, pagesize=page_size)
     c.setTitle(title)
     c.setAuthor("Wochenplaner")
     c.setSubject("Wochenplan / Weekly Schedule")
@@ -165,21 +318,20 @@ def generate_pdf(
         c.setFillColor(HexColor(alt_colors[i % 2]))
         c.rect(grid_x + i * col_w, grid_y, col_w, grid_h, fill=1, stroke=0)
 
-    # ── Gitterlinien ─────────────────────────────────────────────────────────
+    # ── Gitterlinien + Stunden links und rechts ─────────────────────────────
+    label_x_right = grid_x + grid_w + LABEL_PAD_MM
     for h in range(start_hour, end_hour + 1):
         y = grid_y + grid_h - (h - start_hour) * 60 * pt_per_min
 
-        # Vollstunden
         c.setStrokeColor(HexColor("#CCCCCC"))
         c.setLineWidth(0.4)
         c.line(grid_x, y, grid_x + grid_w, y)
 
-        # Zeit-Label
         c.setFillColor(HexColor("#888888"))
         c.setFont("Helvetica", 5.5)
-        c.drawRightString(grid_x - 1 * mm, y - 1.5, f"{h:02d}:00")
+        c.drawRightString(grid_x - LABEL_PAD_MM, y - 1.5, f"{h:02d}:00")
+        c.drawString(label_x_right, y - 1.5, f"{h:02d}:00")
 
-        # Halbstunde (gestrichelt)
         if h < end_hour:
             yh = y - 30 * pt_per_min
             c.setStrokeColor(HexColor("#E5E5E5"))
@@ -217,12 +369,12 @@ def generate_pdf(
         if duration <= 0:
             continue
 
-        # Clamp to grid
         s_clamped = max(s_min, start_hour * 60)
         e_clamped = min(e_min, end_hour * 60)
         if s_clamped >= e_clamped:
             continue
 
+        dur_min = int(e_clamped - s_clamped)
         offset = s_clamped - start_hour * 60
         height = (e_clamped - s_clamped) * pt_per_min
         x = grid_x + day_idx * col_w + 1
@@ -235,50 +387,24 @@ def generate_pdf(
         c.setLineWidth(0.4)
         c.roundRect(x, y, w, height, 2, fill=1, stroke=1)
 
-        # Text
         tc = _text_color(color_hex)
-        c.setFillColor(tc)
-
         name = act["name"]
-        dh, dm = duration // 60, duration % 60
-        dur_str = f"{dh}h {dm}min" if dh and dm else f"{dh}h" if dh else f"{dm}min"
-
         max_text_w = w - 4
-        cx = x + w / 2
 
-        if height >= 18:
-            fs = min(7.5, height * 0.28)
-            fs = max(fs, 5.5)
-            lh = fs * 1.25
-            show_dur = height >= 28
-            dur_fs = max(fs - 1, 4.5)
-            dur_h = (dur_fs * 1.3) if show_dur else 0
-            avail_name_h = height - 6 - dur_h
-            max_lines = max(1, int(avail_name_h / lh))
+        start_display = minutes_to_hhmm(s_clamped)
+        _draw_activity_text(
+            c,
+            x=x,
+            y=y,
+            w=w,
+            height=height,
+            tc=tc,
+            name=name,
+            start_str=start_display,
+            dur_min=dur_min,
+            max_text_w=max_text_w,
+        )
 
-            c.setFont("Helvetica-Bold", fs)
-            name_lines = _wrap_text(name, "Helvetica-Bold", fs, max_text_w, max_lines)
-
-            block_h = len(name_lines) * lh + dur_h
-            top_y = y + height / 2 + block_h / 2 - fs * 0.2
-
-            for li, line in enumerate(name_lines):
-                c.setFont("Helvetica-Bold", fs)
-                c.setFillColor(tc)
-                c.drawCentredString(cx, top_y - li * lh, line)
-
-            if show_dur:
-                c.setFont("Helvetica", dur_fs)
-                c.setFillColor(tc)
-                c.drawCentredString(
-                    cx, top_y - len(name_lines) * lh - dur_fs * 0.15, dur_str
-                )
-        else:
-            c.setFont("Helvetica-Bold", 5)
-            draw_name = _truncate_line(name, "Helvetica-Bold", 5, max_text_w)
-            c.drawCentredString(cx, y + height / 2 - 2, draw_name)
-
-        # ── PDF Text Annotation (Sticky Note) for activity notes ─────────
         note_text = act.get("note", "").strip()
         if note_text:
             ann_s = 10
@@ -294,11 +420,10 @@ def generate_pdf(
             ann["T"] = PDFString(name)
             ann["Name"] = "/Comment"
             ann["Open"] = "false"
-            ann["F"] = 4  # Print flag
+            ann["F"] = 4
             ann["C"] = PDFArray([1, 0.85, 0])
             c._addAnnotation(ann)
 
-    # ── Footer ───────────────────────────────────────────────────────────────
     c.setFillColor(HexColor("#AAAAAA"))
     c.setFont("Helvetica", 5)
     c.drawRightString(page_w - mg_r, mg_b / 2, t("pdf_footer", lang))

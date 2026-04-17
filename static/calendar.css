@@ -13,7 +13,7 @@
     --c-wrap: #f0f2f6;
     --c-grid: #eeeeee;
     --c-gridh: #f7f7f7;
-    --c-time: #cccccc;
+    --c-time: #9a9a9e;
     --c-bdr: #e8e8e8;
     --c-hdra: #4a6fa5;
     --c-hdrb: #5c8a8a;
@@ -29,7 +29,7 @@ html.dark {
     --c-wrap: #111113;
     --c-grid: rgba(255, 255, 255, .07);
     --c-gridh: rgba(255, 255, 255, .03);
-    --c-time: #555558;
+    --c-time: #8e8e93;
     --c-bdr: rgba(255, 255, 255, .08);
     --c-hdra: #2a3f5f;
     --c-hdrb: #215050;
@@ -65,6 +65,16 @@ body {
     padding-top: 35px
 }
 
+.cal-time-col--right {
+    border-left: 1px solid var(--c-bdr)
+}
+
+.cal-time-col--right .cal-time {
+    right: auto;
+    left: 6px;
+    text-align: left
+}
+
 .cal-time-inner {
     position: relative
 }
@@ -72,11 +82,18 @@ body {
 .cal-time {
     position: absolute;
     right: 6px;
-    font-size: 9px;
+    font-size: 10px;
+    font-weight: 500;
     color: var(--c-time);
     white-space: nowrap;
     font-variant-numeric: tabular-nums;
     letter-spacing: .02em
+}
+
+@media (max-width: 520px) {
+    .cal-time-col--right {
+        display: none
+    }
 }
 
 .cal-grid-line {
@@ -194,6 +211,16 @@ body {
     50% {
         outline-color: transparent
     }
+}
+
+.act-time {
+    font-size: 9px;
+    font-weight: 600;
+    line-height: 1.15;
+    opacity: .88;
+    margin-bottom: 1px;
+    font-variant-numeric: tabular-nums;
+    letter-spacing: .02em
 }
 
 .act-name {
