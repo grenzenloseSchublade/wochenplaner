@@ -89,6 +89,8 @@ TRANSLATIONS: dict[Lang, dict[str, str]] = {
         "pdf_show_axis_times_help": "Stunden (HH:00) links und rechts neben dem Raster.",
         "pdf_show_block_times": "Startzeiten in den Blöcken",
         "pdf_show_block_times_help": "Startzeit oben links in jedem farbigen Termin.",
+        "pdf_continuous_hgrid": "Zeitlinien über Terminen",
+        "pdf_continuous_hgrid_help": "Horizontale Stunden- und Halbstundenlinien durchgängig sichtbar, auch über farbigen Terminen.",
         # File management
         "file_mgmt": "Dateiverwaltung",
         "import_json": "JSON importieren",
@@ -178,6 +180,8 @@ TRANSLATIONS: dict[Lang, dict[str, str]] = {
         "pdf_show_axis_times_help": "Hour labels (HH:00) left and right of the grid.",
         "pdf_show_block_times": "Start times in blocks",
         "pdf_show_block_times_help": "Start time in the top-left of each activity block.",
+        "pdf_continuous_hgrid": "Time lines over appointments",
+        "pdf_continuous_hgrid_help": "Hour and half-hour horizontal lines visible across the grid, including over colored blocks.",
         # File management
         "file_mgmt": "File management",
         "import_json": "Import JSON",

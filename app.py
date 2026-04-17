@@ -908,6 +908,12 @@ def main() -> None:
                 key="pdf_block_times",
                 help=t("pdf_show_block_times_help", lang),
             )
+            continuous_horizontal_grid = st.checkbox(
+                t("pdf_continuous_hgrid", lang),
+                value=False,
+                key="pdf_continuous_hgrid",
+                help=t("pdf_continuous_hgrid_help", lang),
+            )
             if st.button(
                 t("generate_pdf", lang),
                 width="stretch",
@@ -931,6 +937,7 @@ def main() -> None:
                             plan_note=st.session_state.plan_note,
                             show_axis_times=show_axis_times,
                             show_block_times=show_block_times,
+                            continuous_horizontal_grid=continuous_horizontal_grid,
                         )
             if st.session_state.pdf_bytes is not None:
                 _slug = slugify(st.session_state.plan_title)
@@ -1018,7 +1025,7 @@ def main() -> None:
         st.markdown(
             "<div style='text-align:center;padding:16px 0 4px;"
             "font-size:11px;color:#aaa;letter-spacing:.02em'>"
-            "v1.2 · "
+            "v1.3 · "
             "<a href='https://github.com/grenzenloseSchublade/wochenplaner'"
             " target='_blank' style='color:#888;text-decoration:none'>"
             "GitHub</a></div>",

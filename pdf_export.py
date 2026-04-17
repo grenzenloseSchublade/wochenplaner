@@ -241,6 +241,54 @@ def _draw_activity_text(
     c.restoreState()
 
 
+def _draw_horizontal_time_raster(
+    c: Canvas,
+    *,
+    grid_x: float,
+    grid_y: float,
+    grid_w: float,
+    grid_h: float,
+    start_hour: int,
+    end_hour: int,
+    pt_per_min: float,
+) -> None:
+    """Volle und halbe Stunden als waagerechte Linien über die Rasterbreite."""
+    for h in range(start_hour, end_hour + 1):
+        y = grid_y + grid_h - (h - start_hour) * 60 * pt_per_min
+
+        c.setStrokeColor(HexColor("#CCCCCC"))
+        c.setLineWidth(0.4)
+        c.line(grid_x, y, grid_x + grid_w, y)
+
+        if h < end_hour:
+            yh = y - 30 * pt_per_min
+            c.setStrokeColor(HexColor("#E5E5E5"))
+            c.setLineWidth(0.25)
+            c.setDash(2, 3)
+            c.line(grid_x, yh, grid_x + grid_w, yh)
+            c.setDash()
+
+
+def _draw_axis_time_labels(
+    c: Canvas,
+    *,
+    grid_x: float,
+    label_x_right: float,
+    grid_y: float,
+    grid_h: float,
+    start_hour: int,
+    end_hour: int,
+    pt_per_min: float,
+) -> None:
+    """Stunden-Zahlen links und rechts am Raster (keine Halbstunden-Labels)."""
+    for h in range(start_hour, end_hour + 1):
+        y = grid_y + grid_h - (h - start_hour) * 60 * pt_per_min
+        c.setFillColor(HexColor("#888888"))
+        c.setFont("Helvetica", 5.5)
+        c.drawRightString(grid_x - LABEL_PAD_MM, y - 1.5, f"{h:02d}:00")
+        c.drawString(label_x_right, y - 1.5, f"{h:02d}:00")
+
+
 def generate_pdf(
     activities: Sequence[Activity],
     paper_format: str = "A4",
@@ -252,6 +300,7 @@ def generate_pdf(
     *,
     show_axis_times: bool = True,
     show_block_times: bool = True,
+    continuous_horizontal_grid: bool = False,
 ) -> bytes:
     page_size = landscape(A4) if paper_format == "A4" else landscape(A5)
     page_w, page_h = page_size
@@ -323,28 +372,42 @@ def generate_pdf(
         c.setFillColor(HexColor(alt_colors[i % 2]))
         c.rect(grid_x + i * col_w, grid_y, col_w, grid_h, fill=1, stroke=0)
 
-    # ── Gitterlinien + Stunden links und rechts ─────────────────────────────
+    # ── Waagerechtes Zeit-Raster + ggf. Achsenbeschriftung ──────────────────
     label_x_right = grid_x + grid_w + LABEL_PAD_MM
-    for h in range(start_hour, end_hour + 1):
-        y = grid_y + grid_h - (h - start_hour) * 60 * pt_per_min
-
-        c.setStrokeColor(HexColor("#CCCCCC"))
-        c.setLineWidth(0.4)
-        c.line(grid_x, y, grid_x + grid_w, y)
-
+    if continuous_horizontal_grid:
         if show_axis_times:
-            c.setFillColor(HexColor("#888888"))
-            c.setFont("Helvetica", 5.5)
-            c.drawRightString(grid_x - LABEL_PAD_MM, y - 1.5, f"{h:02d}:00")
-            c.drawString(label_x_right, y - 1.5, f"{h:02d}:00")
-
-        if h < end_hour:
-            yh = y - 30 * pt_per_min
-            c.setStrokeColor(HexColor("#E5E5E5"))
-            c.setLineWidth(0.25)
-            c.setDash(2, 3)
-            c.line(grid_x, yh, grid_x + grid_w, yh)
-            c.setDash()
+            _draw_axis_time_labels(
+                c,
+                grid_x=grid_x,
+                label_x_right=label_x_right,
+                grid_y=grid_y,
+                grid_h=grid_h,
+                start_hour=start_hour,
+                end_hour=end_hour,
+                pt_per_min=pt_per_min,
+            )
+    else:
+        _draw_horizontal_time_raster(
+            c,
+            grid_x=grid_x,
+            grid_y=grid_y,
+            grid_w=grid_w,
+            grid_h=grid_h,
+            start_hour=start_hour,
+            end_hour=end_hour,
+            pt_per_min=pt_per_min,
+        )
+        if show_axis_times:
+            _draw_axis_time_labels(
+                c,
+                grid_x=grid_x,
+                label_x_right=label_x_right,
+                grid_y=grid_y,
+                grid_h=grid_h,
+                start_hour=start_hour,
+                end_hour=end_hour,
+                pt_per_min=pt_per_min,
+            )
 
     # ── Spaltentrennlinien ───────────────────────────────────────────────────
     c.setStrokeColor(HexColor("#CCCCCC"))
@@ -359,6 +422,10 @@ def generate_pdf(
     c.rect(grid_x, grid_y, grid_w, grid_h, fill=0, stroke=1)
 
     # ── Aktivitätsblöcke ─────────────────────────────────────────────────────
+    # Bei durchgängigem Raster: erst Flächen, dann Linien, dann Text — sonst
+    # liegen die Zeitlinien über der Beschriftung.
+    overlay_text_blocks: list[dict[str, object]] = []
+
     for act in activities:
         if act.get("day") not in WOCHENTAGE:
             continue
@@ -396,40 +463,104 @@ def generate_pdf(
         tc = _text_color(color_hex)
         name = act["name"]
         max_text_w = w - 4
-
         start_display = minutes_to_hhmm(s_clamped)
-        _draw_activity_text(
-            c,
-            x=x,
-            y=y,
-            w=w,
-            height=height,
-            tc=tc,
-            name=name,
-            start_str=start_display,
-            dur_min=dur_min,
-            max_text_w=max_text_w,
-            show_block_times=show_block_times,
-        )
 
-        note_text = act.get("note", "").strip()
-        if note_text:
-            ann_s = 10
-            ann_x = x + w - ann_s - 1
-            ann_y = y + height - ann_s - 1
-            ann = PDFDictionary()
-            ann["Type"] = "/Annot"
-            ann["Subtype"] = "/Text"
-            ann["Rect"] = PDFArray(
-                [ann_x, ann_y, ann_x + ann_s, ann_y + ann_s]
+        if continuous_horizontal_grid:
+            overlay_text_blocks.append(
+                {
+                    "x": x,
+                    "y": y,
+                    "w": w,
+                    "height": height,
+                    "tc": tc,
+                    "name": name,
+                    "start_str": start_display,
+                    "dur_min": dur_min,
+                    "max_text_w": max_text_w,
+                    "note": act.get("note", "").strip(),
+                }
             )
-            ann["Contents"] = PDFString(note_text)
-            ann["T"] = PDFString(name)
-            ann["Name"] = "/Comment"
-            ann["Open"] = "false"
-            ann["F"] = 4
-            ann["C"] = PDFArray([1, 0.85, 0])
-            c._addAnnotation(ann)
+        else:
+            _draw_activity_text(
+                c,
+                x=x,
+                y=y,
+                w=w,
+                height=height,
+                tc=tc,
+                name=name,
+                start_str=start_display,
+                dur_min=dur_min,
+                max_text_w=max_text_w,
+                show_block_times=show_block_times,
+            )
+
+            note_text = act.get("note", "").strip()
+            if note_text:
+                ann_s = 10
+                ann_x = x + w - ann_s - 1
+                ann_y = y + height - ann_s - 1
+                ann = PDFDictionary()
+                ann["Type"] = "/Annot"
+                ann["Subtype"] = "/Text"
+                ann["Rect"] = PDFArray(
+                    [ann_x, ann_y, ann_x + ann_s, ann_y + ann_s]
+                )
+                ann["Contents"] = PDFString(note_text)
+                ann["T"] = PDFString(name)
+                ann["Name"] = "/Comment"
+                ann["Open"] = "false"
+                ann["F"] = 4
+                ann["C"] = PDFArray([1, 0.85, 0])
+                c._addAnnotation(ann)
+
+    if continuous_horizontal_grid:
+        _draw_horizontal_time_raster(
+            c,
+            grid_x=grid_x,
+            grid_y=grid_y,
+            grid_w=grid_w,
+            grid_h=grid_h,
+            start_hour=start_hour,
+            end_hour=end_hour,
+            pt_per_min=pt_per_min,
+        )
+        for ob in overlay_text_blocks:
+            _draw_activity_text(
+                c,
+                x=float(ob["x"]),
+                y=float(ob["y"]),
+                w=float(ob["w"]),
+                height=float(ob["height"]),
+                tc=ob["tc"],  # type: ignore[arg-type]
+                name=str(ob["name"]),
+                start_str=str(ob["start_str"]),
+                dur_min=int(ob["dur_min"]),
+                max_text_w=float(ob["max_text_w"]),
+                show_block_times=show_block_times,
+            )
+            note_text = str(ob.get("note", "") or "")
+            if note_text:
+                ann_s = 10
+                ox = float(ob["x"])
+                oy = float(ob["y"])
+                ow = float(ob["w"])
+                oh = float(ob["height"])
+                ann_x = ox + ow - ann_s - 1
+                ann_y = oy + oh - ann_s - 1
+                ann = PDFDictionary()
+                ann["Type"] = "/Annot"
+                ann["Subtype"] = "/Text"
+                ann["Rect"] = PDFArray(
+                    [ann_x, ann_y, ann_x + ann_s, ann_y + ann_s]
+                )
+                ann["Contents"] = PDFString(note_text)
+                ann["T"] = PDFString(str(ob["name"]))
+                ann["Name"] = "/Comment"
+                ann["Open"] = "false"
+                ann["F"] = 4
+                ann["C"] = PDFArray([1, 0.85, 0])
+                c._addAnnotation(ann)
 
     c.setFillColor(HexColor("#AAAAAA"))
     c.setFont("Helvetica", 5)

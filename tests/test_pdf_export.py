@@ -141,6 +141,24 @@ class TestPdfExport(unittest.TestCase):
         )
         self.assertTrue(data.startswith(b"%PDF"))
 
+    def test_continuous_horizontal_grid_over_blocks(self) -> None:
+        activities = [
+            {
+                "day": "Montag",
+                "start": "10:00",
+                "end": "11:00",
+                "name": "Termin",
+                "color": "#F3E5AB",
+                "id": "x",
+            },
+        ]
+        data = generate_pdf(
+            activities,
+            paper_format="A4",
+            continuous_horizontal_grid=True,
+        )
+        self.assertTrue(data.startswith(b"%PDF"))
+
 
 if __name__ == "__main__":
     unittest.main()
