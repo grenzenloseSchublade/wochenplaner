@@ -952,6 +952,7 @@ def main() -> None:
                 ),
             )
             st.caption(t("pdf_style_hint", lang))
+            st.caption(t("pdf_modern_hosting_note", lang))
             if st.button(
                 t("generate_pdf", lang),
                 width="stretch",

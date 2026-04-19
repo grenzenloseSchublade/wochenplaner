@@ -98,6 +98,11 @@ TRANSLATIONS: dict[Lang, dict[str, str]] = {
             "Klassisch: kompaktes PDF mit ReportLab; Eintrag-Notizen zusätzlich als klickbare Hinweise. "
             "Modern: farbiges Wochenraster wie in der App (HTML/CSS)."
         ),
+        "pdf_modern_hosting_note": (
+            "Modern-PDF benötigt auf dem Server Chromium (Playwright). "
+            "Auf **Streamlit Community Cloud** ist das meist **nicht** installiert – dann **Klassisch** wählen "
+            "oder die App lokal / auf einem eigenen Server mit `playwright install chromium` nutzen."
+        ),
         "pdf_modern_failed": "Modern-PDF konnte nicht erzeugt werden.",
         "pdf_export_failed": "PDF konnte nicht erzeugt werden.",
         # File management
@@ -207,6 +212,11 @@ TRANSLATIONS: dict[Lang, dict[str, str]] = {
         "pdf_style_hint": (
             "Classic: compact ReportLab PDF; activity notes also as clickable markers. "
             "Modern: colored week grid like the app (HTML/CSS)."
+        ),
+        "pdf_modern_hosting_note": (
+            "Modern PDF needs Chromium on the server (Playwright). "
+            "**Streamlit Community Cloud** usually does **not** include it—choose **Classic**, "
+            "or run the app locally / self-hosted with `playwright install chromium`."
         ),
         "pdf_modern_failed": "Could not generate modern PDF.",
         "pdf_export_failed": "Could not generate PDF.",
