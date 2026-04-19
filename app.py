@@ -304,7 +304,20 @@ def _delete_activity(act_id: str) -> None:
     st.session_state.activities = [
         a for a in st.session_state.activities if a["id"] != act_id
     ]
+    _ea = st.session_state.get("edit_mode")
+    if _ea is not None and _ea.get("id") == act_id:
+        st.session_state.edit_mode = None
     save_activities(st.session_state.activities)
+
+
+def _delete_activity_and_exit_edit(act_id: str) -> None:
+    """Delete activity from edit form: same as _delete_activity plus form reset.
+
+    Do not call st.rerun() here: this runs inside st.button(on_click=...), and
+    Streamlit reruns the app after the callback; st.rerun() in a callback is a no-op.
+    """
+    _delete_activity(act_id)
+    _reset_form_keys()
 
 
 def _edit_activity(act_id: str) -> None:
@@ -503,6 +516,7 @@ def _activity_form() -> None:
             _reset_form_keys()
             st.rerun()
 
+        _conflicts: list[Activity] | None = None
         if not name:
             st.warning(t("enter_name", lang))
         elif t2m(bis) <= t2m(von):
@@ -538,7 +552,8 @@ def _activity_form() -> None:
                 ):
                     _do_save()
 
-        if ea:
+        _has_overlap = bool(_conflicts)
+        if ea and not _has_overlap:
             if st.button(
                 t("cancel", lang),
                 width="stretch",
@@ -547,6 +562,15 @@ def _activity_form() -> None:
                 st.session_state.edit_mode = None
                 _reset_form_keys()
                 st.rerun()
+
+        if ea:
+            st.button(
+                t("delete", lang),
+                width="stretch",
+                key="btn_delete_edit",
+                on_click=_delete_activity_and_exit_edit,
+                args=(ea["id"],),
+            )
 
 
 # ── Entries list ─────────────────────────────────────────────────────────────
@@ -558,7 +582,11 @@ def _entries_fragment() -> None:
     if not acts:
         return
 
-    with st.expander(f"{t('entries', lang)} ({len(acts)})", expanded=False):
+    _entries_open = st.session_state.get("edit_mode") is not None
+    with st.expander(
+        f"{t('entries', lang)} ({len(acts)})",
+        expanded=_entries_open,
+    ):
         for _act in _sort_activities(acts):
             _ns = html_lib.escape(_act["name"])
             _ac = validate_color(_act["color"])
@@ -1025,7 +1053,7 @@ def main() -> None:
         st.markdown(
             "<div style='text-align:center;padding:16px 0 4px;"
             "font-size:11px;color:#aaa;letter-spacing:.02em'>"
-            "v1.3 · "
+            "v1.4.1 · "
             "<a href='https://github.com/grenzenloseSchublade/wochenplaner'"
             " target='_blank' style='color:#888;text-decoration:none'>"
             "GitHub</a></div>",
