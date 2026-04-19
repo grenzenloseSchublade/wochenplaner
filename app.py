@@ -38,6 +38,14 @@ from i18n import (
     t,
 )
 from pdf_export import generate_pdf
+from plan_json import (
+    MAX_JSON_UPLOAD_BYTES,
+    PlanParseError,
+    activities_from_local_storage_json,
+    load_plan_from_file,
+    parse_plan_import,
+    plan_document_json,
+)
 from storage import ls_delete, ls_load, ls_save
 from templates import get_template_activities, get_template_names
 from utils import (
@@ -51,9 +59,6 @@ from utils import (
     validate_activity,
     validate_color,
 )
-
-# ── Sharing helpers ──────────────────────────────────────────────────────────
-_MAX_SHARE_BYTES = 1800  # URL-safe limit
 
 # ── Form widget keys (stable across reruns) ──────────────────────────────────
 _FORM_KEYS = (
@@ -124,16 +129,6 @@ def _reset_form_keys() -> None:
         st.session_state.pop(k, None)
 
 
-def encode_plan(acts: list[Activity]) -> str | None:
-    """Compress + base64-encode a plan for URL sharing."""
-    raw = json.dumps(acts, ensure_ascii=False, separators=(",", ":")).encode("utf-8")
-    compressed = zlib.compress(raw, 9)
-    encoded = base64.urlsafe_b64encode(compressed).decode("ascii")
-    if len(encoded) > _MAX_SHARE_BYTES:
-        return None
-    return encoded
-
-
 def decode_plan(data: str) -> list[Activity] | None:
     """Decode a shared plan from URL parameter."""
     try:
@@ -150,30 +145,20 @@ def decode_plan(data: str) -> list[Activity] | None:
 
 
 # ── Datenzugriff ──────────────────────────────────────────────────────────────
-def load_activities(fp: Path | None = None) -> list[Activity]:
-    fp = fp or DATA_FILE
-    if not fp.exists():
-        return []
-    try:
-        data = json.loads(fp.read_text("utf-8"))
-    except (json.JSONDecodeError, OSError):
-        return []
-    if not isinstance(data, list):
-        return []
-    return [item for item in data if validate_activity(item)]
-
-
 def save_activities(a: list[Activity], fp: Path | None = None) -> None:
     fp = fp or DATA_FILE
+    title = str(st.session_state.get("plan_title") or "")
+    plan_note = str(st.session_state.get("plan_note") or "")
+    payload = plan_document_json(a, title, plan_note)
     try:
         fp.parent.mkdir(parents=True, exist_ok=True)
-        fp.write_text(json.dumps(a, ensure_ascii=False, indent=2), "utf-8")
+        fp.write_text(payload, encoding="utf-8")
     except OSError:
         pass  # Cloud: filesystem may be ephemeral
-    if fp == DATA_FILE or fp is None:
+    if fp == DATA_FILE:
         _ls_counter = st.session_state.get("_ls_wc", 0) + 1
         st.session_state._ls_wc = _ls_counter
-        ls_save("activities", json.dumps(a, ensure_ascii=False), f"save_{_ls_counter}")
+        ls_save("activities", payload, f"save_{_ls_counter}")
 
 
 def _sort_activities(acts: list[Activity]) -> list[Activity]:
@@ -716,10 +701,24 @@ def main() -> None:
         ("lang", "de"),
         ("_ls_wc", 0),
     ]
+    _disk_load = None
     for k, v in _defaults:
         if k not in st.session_state:
             if k == "activities":
-                st.session_state[k] = load_activities()
+                _disk_load = load_plan_from_file()
+                st.session_state[k] = _disk_load.activities
+                st.session_state["_disk_title_from_file"] = _disk_load.title_from_file
+                st.session_state["_disk_note_from_file"] = _disk_load.note_from_file
+            elif k == "plan_title":
+                if _disk_load and _disk_load.title_from_file:
+                    st.session_state[k] = _disk_load.title
+                else:
+                    st.session_state[k] = v
+            elif k == "plan_note":
+                if _disk_load and _disk_load.note_from_file:
+                    st.session_state[k] = _disk_load.plan_note
+                else:
+                    st.session_state[k] = v
             elif k == "custom_activities":
                 st.session_state[k] = []
             elif k == "activity_colors":
@@ -731,14 +730,9 @@ def main() -> None:
     if not st.session_state.activities and "ls_checked" not in st.session_state:
         ls_data = ls_load("activities", "init_load")
         if ls_data:
-            try:
-                items = json.loads(ls_data)
-                if isinstance(items, list):
-                    valid = [item for item in items if validate_activity(item)]
-                    if valid:
-                        st.session_state.activities = valid
-            except (json.JSONDecodeError, TypeError):
-                pass
+            valid = activities_from_local_storage_json(ls_data)
+            if valid is not None:
+                st.session_state.activities = valid
         st.session_state.ls_checked = True
 
     # ── Restore language from LocalStorage ───────────────────────────────────
@@ -750,16 +744,18 @@ def main() -> None:
 
     # ── Restore title from LocalStorage ──────────────────────────────────────
     if "ls_title_checked" not in st.session_state:
-        ls_title = ls_load("title", "init_title")
-        if ls_title and isinstance(ls_title, str) and ls_title.strip():
-            st.session_state.plan_title = ls_title
+        if not st.session_state.get("_disk_title_from_file"):
+            ls_title = ls_load("title", "init_title")
+            if ls_title and isinstance(ls_title, str) and ls_title.strip():
+                st.session_state.plan_title = ls_title
         st.session_state.ls_title_checked = True
 
     # ── Restore plan note from LocalStorage ──────────────────────────────────
     if "ls_plan_note_checked" not in st.session_state:
-        ls_pn = ls_load("plan_note", "init_plan_note")
-        if ls_pn and isinstance(ls_pn, str):
-            st.session_state.plan_note = ls_pn
+        if not st.session_state.get("_disk_note_from_file"):
+            ls_pn = ls_load("plan_note", "init_plan_note")
+            if ls_pn and isinstance(ls_pn, str):
+                st.session_state.plan_note = ls_pn
         st.session_state.ls_plan_note_checked = True
 
     # ── Restore user prefs from LocalStorage ────────────────────────────────
@@ -980,24 +976,24 @@ def main() -> None:
                     key="btn_pdf_dl",
                 )
 
-        # ── Teilen / Share ───────────────────────────────────────────────────
-        if acts:
-            with st.expander(t("share", lang), expanded=False):
-                encoded = encode_plan(acts)
-                if encoded:
-                    share_url = f"?plan={encoded}"
-                    st.code(share_url, language=None)
-                    st.caption(t("copy_link", lang) + " — " + t("share_help", lang))
-                else:
-                    st.warning(t("share_too_large", lang))
+        # ── Teilen: Hinweis (URL-Teilen ist für große Pläne ungeeignet) ───────
+        st.caption(t("share_via_json_hint", lang))
 
         # ── Plan speichern / Download JSON ──────────────────────────────────
-        if acts:
+        _has_meta = bool(
+            (st.session_state.plan_title or "").strip()
+            or (st.session_state.plan_note or "").strip()
+        )
+        if acts or _has_meta:
             _slug = slugify(st.session_state.plan_title)
             _json_name = f"{datetime.now().strftime('%Y-%m-%d')}_{_slug}.json"
             st.download_button(
                 t("download_json", lang),
-                data=json.dumps(acts, ensure_ascii=False, indent=2),
+                data=plan_document_json(
+                    acts,
+                    str(st.session_state.plan_title or ""),
+                    str(st.session_state.plan_note or ""),
+                ),
                 file_name=_json_name,
                 mime="application/json",
                 width="stretch",
@@ -1018,24 +1014,65 @@ def main() -> None:
                     st.session_state._last_upload_fp = _fp
                     with st.spinner(t("importing_json", lang)):
                         try:
-                            raw = json.loads(uploaded.read().decode("utf-8"))
-                            if isinstance(raw, list):
-                                valid = [
-                                    item for item in raw if validate_activity(item)
-                                ]
-                                if valid:
-                                    st.session_state.activities = valid
-                                    _sync_prefs_from_activities(valid)
-                                    save_activities(valid)
-                                    _reset_form_keys()
-                                    st.toast(
-                                        f"{len(valid)} {t('activities_imported', lang)}"
-                                    )
-                                    st.rerun()
-                                else:
-                                    st.error(t("no_valid_acts", lang))
+                            raw_bytes = uploaded.read()
+                            if len(raw_bytes) > MAX_JSON_UPLOAD_BYTES:
+                                st.error(t("json_too_large", lang))
                             else:
-                                st.error(t("json_must_list", lang))
+                                raw = json.loads(raw_bytes.decode("utf-8"))
+                                try:
+                                    valid, tit_upd, note_upd = parse_plan_import(raw)
+                                except PlanParseError:
+                                    st.error(t("json_invalid_plan", lang))
+                                else:
+                                    _has_act_list = (
+                                        isinstance(raw, dict)
+                                        and isinstance(raw.get("activities"), list)
+                                    )
+                                    _empty_with_meta = (
+                                        _has_act_list
+                                        and len(raw["activities"]) == 0
+                                        and (
+                                            tit_upd is not None
+                                            or note_upd is not None
+                                        )
+                                    )
+                                    if not valid and not _empty_with_meta:
+                                        st.error(t("no_valid_acts", lang))
+                                    else:
+                                        _to_save = valid if valid else []
+                                        st.session_state.activities = _to_save
+                                        if tit_upd is not None:
+                                            st.session_state.plan_title = tit_upd
+                                        if note_upd is not None:
+                                            st.session_state.plan_note = note_upd
+                                        st.session_state.pdf_bytes = None
+                                        _sync_prefs_from_activities(_to_save)
+                                        save_activities(_to_save)
+                                        if tit_upd is not None:
+                                            _ls_counter = (
+                                                st.session_state.get("_ls_wc", 0) + 1
+                                            )
+                                            st.session_state._ls_wc = _ls_counter
+                                            ls_save(
+                                                "title",
+                                                st.session_state.plan_title,
+                                                f"import_title_{_ls_counter}",
+                                            )
+                                        if note_upd is not None:
+                                            _ls_counter = (
+                                                st.session_state.get("_ls_wc", 0) + 1
+                                            )
+                                            st.session_state._ls_wc = _ls_counter
+                                            ls_save(
+                                                "plan_note",
+                                                st.session_state.plan_note,
+                                                f"import_note_{_ls_counter}",
+                                            )
+                                        _reset_form_keys()
+                                        st.toast(
+                                            f"{len(_to_save)} {t('activities_imported', lang)}"
+                                        )
+                                        st.rerun()
                         except json.JSONDecodeError:
                             st.error(t("invalid_json", lang))
 
@@ -1053,7 +1090,7 @@ def main() -> None:
         st.markdown(
             "<div style='text-align:center;padding:16px 0 4px;"
             "font-size:11px;color:#aaa;letter-spacing:.02em'>"
-            "v1.4.1 · "
+            "v1.4.2 · "
             "<a href='https://github.com/grenzenloseSchublade/wochenplaner'"
             " target='_blank' style='color:#888;text-decoration:none'>"
             "GitHub</a></div>",

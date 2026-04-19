@@ -98,10 +98,16 @@ TRANSLATIONS: dict[Lang, dict[str, str]] = {
         "activities_imported": "Aktivitäten importiert",
         "no_valid_acts": "Keine gültigen Aktivitäten in der Datei.",
         "json_must_list": "JSON muss eine Liste von Aktivitäten sein.",
+        "json_invalid_plan": "Ungültiges Plan-JSON (Objekt mit Liste „activities“ erwartet).",
+        "json_too_large": "JSON-Datei ist zu groß.",
         "invalid_json": "Ungültige JSON-Datei.",
         "export_csv": "CSV exportieren",
         "download_json": "💾 Plan speichern (JSON)",
-        "download_json_hint": 'Speichert den Plan als Datei auf deinem Gerät. Zum Wiederherstellen per "JSON importieren" laden.',
+        "download_json_hint": (
+            "Speichert Plantitel, Plan-Notiz und alle Aktivitäten als Datei auf deinem Gerät. "
+            'Zum Wiederherstellen per „JSON importieren“ laden. Enthält alle Notizen – '
+            "unbedacht nicht weitergeben."
+        ),
         # Templates
         "templates": "Vorlagen",
         "load_template": "Vorlage laden",
@@ -116,6 +122,10 @@ TRANSLATIONS: dict[Lang, dict[str, str]] = {
         "plan_loaded_from_link": "Plan aus Link geladen!",
         "share_too_large": "Plan zu groß zum Teilen per URL.",
         "share_help": "Empfänger öffnet den Link und der Plan wird geladen.",
+        "share_via_json_hint": (
+            "Volle Wochenpläne passen oft nicht in einen Link. "
+            "Nutze „Plan speichern (JSON)“ und sende die Datei per Messenger oder E-Mail."
+        ),
         # Tabs
         "tab_calendar": "Kalender",
         "tab_statistics": "Statistik",
@@ -189,10 +199,15 @@ TRANSLATIONS: dict[Lang, dict[str, str]] = {
         "activities_imported": "activities imported",
         "no_valid_acts": "No valid activities in file.",
         "json_must_list": "JSON must be a list of activities.",
+        "json_invalid_plan": "Invalid plan JSON (expected an object with an “activities” list).",
+        "json_too_large": "JSON file is too large.",
         "invalid_json": "Invalid JSON file.",
         "export_csv": "Export CSV",
         "download_json": "💾 Save plan (JSON)",
-        "download_json_hint": 'Downloads the plan as a file to your device. Restore it later via "Import JSON".',
+        "download_json_hint": (
+            "Saves plan title, plan note, and all activities to a file on your device. "
+            'Restore via “Import JSON”. Contains all notes—do not share carelessly.'
+        ),
         # Templates
         "templates": "Templates",
         "load_template": "Load template",
@@ -207,6 +222,10 @@ TRANSLATIONS: dict[Lang, dict[str, str]] = {
         "plan_loaded_from_link": "Plan loaded from link!",
         "share_too_large": "Plan too large for URL sharing.",
         "share_help": "Recipients open the link and the plan loads automatically.",
+        "share_via_json_hint": (
+            "Full weekly plans often do not fit in a link. "
+            'Use “Save plan (JSON)” and send the file via messenger or email.'
+        ),
         # Tabs
         "tab_calendar": "Calendar",
         "tab_statistics": "Statistics",

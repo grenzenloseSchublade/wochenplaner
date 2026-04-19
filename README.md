@@ -149,19 +149,21 @@ Die Plan-Notiz wird als sichtbarer Untertitel unter dem Titel gerendert.
 ### Notizen / Notes
 - **Eintrag-Notiz**: Pro Aktivität ein 2-zeiliges Textfeld (z.B. „Raum 204, mit Max")
 - **Plan-Notiz**: Mehrzeiliges Feld im PDF-Bereich (z.B. „KW 15 – Urlaubswoche")
-- Beide Notiz-Typen werden in JSON, CSV, URL-Sharing und PDF exportiert
+- **JSON**: Plantitel, Plan-Notiz und Eintrags-Notizen werden in der JSON-Datei gespeichert
+- **CSV**: nur Eintrags-Notizen (Spalte „Notiz“), kein Plantitel und keine Plan-Notiz
+- **PDF**: Plantitel, Plan-Notiz und Eintrags-Notizen (als Anmerkungen)
 
 ### Plan speichern & laden / Save & load
-- **Plan speichern (JSON)** → Datei auf Gerät speichern
-- Dateiverwaltung → **JSON importieren** → gespeicherte Datei laden
+- **Plan speichern (JSON)** → Datei auf Gerät speichern (einheitliches Format mit Titel, Plan-Notiz und Aktivitäten)
+- Dateiverwaltung → **JSON importieren** → gespeicherte Datei laden (ältere reine Aktivitäten-Listen werden weiterhin akzeptiert)
 
 ### Vorlagen / Templates
 - Sidebar → Vorlagen → Vorlage auswählen → Laden
 - 5 Vorlagen: Student, Fitness, Büro, Schichtplan, Beispiel
 
 ### Plan teilen / Share
-- Sidebar → Teilen → Link kopieren → Empfänger öffnet Link
-- Plan wird per URL übertragen (kein Backend nötig, ~20 Aktivitäten max)
+- Für typische vollständige Wochenpläne: **JSON-Datei** speichern und per Messenger, E-Mail oder Cloud versenden
+- Bestehende Links mit `?plan=…` (nur Aktivitäten, komprimiert) funktionieren weiter; für große Pläne ist die URL oft zu kurz bemessen
 
 ### PDF-Export
 1. Format: DIN A4 oder A5 (Querformat)
