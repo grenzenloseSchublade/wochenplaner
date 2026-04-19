@@ -19,7 +19,16 @@ def test_build_plan_document_shape() -> None:
 
 
 def test_parse_plan_import_legacy_list() -> None:
-    raw = [{"id": "x", "name": "A", "day": "Montag", "start": "10:00", "end": "11:00", "color": "#fff"}]
+    raw = [
+        {
+            "id": "x",
+            "name": "A",
+            "day": "Montag",
+            "start": "10:00",
+            "end": "11:00",
+            "color": "#fff",
+        }
+    ]
     acts, tit, pn = parse_plan_import(raw)
     assert len(acts) == 1 and validate_activity(acts[0])
     assert tit is None and pn is None

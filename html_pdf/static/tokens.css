@@ -1,0 +1,26 @@
+:root {
+  /* MD3-inspiriert: ruhige Oberflächen, eine Primärfarbe für Akzente */
+  --md-sys-color-surface: #fdfcff;
+  --md-sys-color-surface-container: #f3edf7;
+  --md-sys-color-surface-container-high: #ece6f0;
+  --md-sys-color-on-surface: #1d1b20;
+  --md-sys-color-on-surface-variant: #49454f;
+  --md-sys-color-outline: #cac4d0;
+  --md-sys-color-outline-variant: #e7e0ec;
+  --md-sys-color-primary: #4a5fc7;
+  --md-sys-color-on-primary: #ffffff;
+  --md-sys-color-tertiary: #7d5268;
+  --md-typescale-title-size: 12pt;
+  --md-typescale-body-size: 7.5pt;
+  --md-typescale-label-size: 5.25pt;
+  /* Wochentags-Leiste + Tagesspalten (Modern-PDF) */
+  --md-typescale-weekday-size: 10pt;
+  --md-weekday-row-bg: var(--md-sys-color-surface-container-high);
+  --md-day-col-stripe-a: #ffffff;
+  --md-day-col-stripe-b: #f0ecf4;
+  --md-space-xs: 1mm;
+  --md-space-sm: 2mm;
+  --md-radius-sm: 4px;
+  --md-radius-tile: 5px;
+  --md-elevation-hairline: 0 0 0 0.35px rgba(29, 27, 32, 0.12);
+}

@@ -91,6 +91,15 @@ TRANSLATIONS: dict[Lang, dict[str, str]] = {
         "pdf_show_block_times_help": "Startzeit oben links in jedem farbigen Termin.",
         "pdf_continuous_hgrid": "Zeitlinien über Terminen",
         "pdf_continuous_hgrid_help": "Horizontale Stunden- und Halbstundenlinien durchgängig sichtbar, auch über farbigen Terminen.",
+        "pdf_export_mode": "PDF-Export",
+        "pdf_style_classic": "Klassisch (ReportLab)",
+        "pdf_style_modern": "Modern (Kalenderlayout)",
+        "pdf_style_hint": (
+            "Klassisch: kompaktes PDF mit ReportLab; Eintrag-Notizen zusätzlich als klickbare Hinweise. "
+            "Modern: farbiges Wochenraster wie in der App (HTML/CSS)."
+        ),
+        "pdf_modern_failed": "Modern-PDF konnte nicht erzeugt werden.",
+        "pdf_export_failed": "PDF konnte nicht erzeugt werden.",
         # File management
         "file_mgmt": "Dateiverwaltung",
         "import_json": "JSON importieren",
@@ -105,7 +114,7 @@ TRANSLATIONS: dict[Lang, dict[str, str]] = {
         "download_json": "💾 Plan speichern (JSON)",
         "download_json_hint": (
             "Speichert Plantitel, Plan-Notiz und alle Aktivitäten als Datei auf deinem Gerät. "
-            'Zum Wiederherstellen per „JSON importieren“ laden. Enthält alle Notizen – '
+            "Zum Wiederherstellen per „JSON importieren“ laden. Enthält alle Notizen – "
             "unbedacht nicht weitergeben."
         ),
         # Templates
@@ -192,6 +201,15 @@ TRANSLATIONS: dict[Lang, dict[str, str]] = {
         "pdf_show_block_times_help": "Start time in the top-left of each activity block.",
         "pdf_continuous_hgrid": "Time lines over appointments",
         "pdf_continuous_hgrid_help": "Hour and half-hour horizontal lines visible across the grid, including over colored blocks.",
+        "pdf_export_mode": "PDF export",
+        "pdf_style_classic": "Classic (ReportLab)",
+        "pdf_style_modern": "Modern (calendar layout)",
+        "pdf_style_hint": (
+            "Classic: compact ReportLab PDF; activity notes also as clickable markers. "
+            "Modern: colored week grid like the app (HTML/CSS)."
+        ),
+        "pdf_modern_failed": "Could not generate modern PDF.",
+        "pdf_export_failed": "Could not generate PDF.",
         # File management
         "file_mgmt": "File management",
         "import_json": "Import JSON",
@@ -206,7 +224,7 @@ TRANSLATIONS: dict[Lang, dict[str, str]] = {
         "download_json": "💾 Save plan (JSON)",
         "download_json_hint": (
             "Saves plan title, plan note, and all activities to a file on your device. "
-            'Restore via “Import JSON”. Contains all notes—do not share carelessly.'
+            "Restore via “Import JSON”. Contains all notes—do not share carelessly."
         ),
         # Templates
         "templates": "Templates",
@@ -224,7 +242,7 @@ TRANSLATIONS: dict[Lang, dict[str, str]] = {
         "share_help": "Recipients open the link and the plan loads automatically.",
         "share_via_json_hint": (
             "Full weekly plans often do not fit in a link. "
-            'Use “Save plan (JSON)” and send the file via messenger or email.'
+            "Use “Save plan (JSON)” and send the file via messenger or email."
         ),
         # Tabs
         "tab_calendar": "Calendar",

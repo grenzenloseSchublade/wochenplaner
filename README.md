@@ -9,6 +9,21 @@ no account, no tracking, open source.
 > **Kostenlose Alternative zu tryschedule.com** – PDF-Export dort ab $4.90/Woche,
 > hier komplett gratis.
 
+### Major update: PDF export (v1.5)
+
+Ab **v1.5.0** gibt es **zwei PDF-Modi** in der Sidebar unter „PDF erzeugen“:
+
+| Modus | Technik | Hinweis |
+|-------|---------|---------|
+| **Klassisch** | ReportLab (wie bisher) | PDF-Text-Annotations für Eintrag-Notizen, kein Extra-Setup |
+| **Modern (HTML)** | Jinja2 + CSS + **Playwright** (headless Chromium) | Material-Design-ähnliches Layout, Schrift **Roboto** (WOFF2, [Apache-2.0](https://www.apache.org/licenses/LICENSE-2.0.html), Dateien via [@fontsource-Quellen](https://www.npmjs.com/package/@fontsource/roboto)). |
+
+**Modern-PDF:** nach `uv sync` einmal `uv run playwright install chromium`. Unter Linux braucht Chromium typisch Systembibliotheken (z. B. `libatk`, `libgbm` – im **Devcontainer** sind sie im `Dockerfile` und `post-create.sh` abgedeckt).
+
+**Ausrichtung im Raster:** Kacheln sind **links** (`text-align: start`) ausgerichtet; die **Stundenachsen** links/rechts sind bewusst **innen** zum Raster hin orientiert (Leserichtung), nicht zwingend zur Papierkante. Der **Footer** ist zentriert.
+
+**Streamlit Community Cloud** stellt oft **keinen** vollständigen Chromium-Stack bereit: dort bei Problemen den **klassischen** Modus nutzen.
+
 ---
 
 ## Schnellstart / Quick Start
@@ -16,6 +31,9 @@ no account, no tracking, open source.
 ```bash
 # Abhängigkeiten installieren / Install dependencies
 uv sync
+
+# Optional: Chromium für Modern-PDF (Playwright)
+uv run playwright install chromium
 
 # App starten / Start app
 uv run streamlit run app.py
@@ -31,6 +49,8 @@ Opens http://localhost:8501 in your browser automatically.
 3. Main file: `app.py`
 4. Fertig – `uv.lock` und `.python-version` werden automatisch erkannt
 
+Hinweis: **Modern-PDF** (Playwright/Chromium) ist dort oft **nicht** voll nutzbar; Nutzer können weiterhin **Klassisch** wählen.
+
 ---
 
 ## Features
@@ -38,7 +58,7 @@ Opens http://localhost:8501 in your browser automatically.
 | Feature | DE | EN |
 |---|---|---|
 | **Proportionale Zeitblöcke** | 4h-Block doppelt so groß wie 2h | 4h block twice as tall as 2h |
-| **PDF-Export (kostenlos)** | DIN A4 / A5 Querformat | DIN A4 / A5 landscape |
+| **PDF-Export (kostenlos)** | Klassisch **oder** Modern (HTML, Playwright); DIN A4 / A5 Quer | Classic **or** modern (HTML, Playwright); DIN A4 / A5 landscape |
 | **CSV-Export** | Für Excel / Google Sheets | For Excel / Google Sheets |
 | **Notizen (pro Eintrag)** | 2-zeilige Notiz pro Aktivität, sichtbar im Kontextmenü | 2-line note per activity, visible in context menu |
 | **Notizen (Plan-Ebene)** | Mehrzeilige Notiz für den gesamten Wochenplan | Multi-line note for the whole week |
@@ -81,8 +101,10 @@ Opens http://localhost:8501 in your browser automatically.
 ```
 wochenplaner/
 ├── app.py                          # Streamlit UI (main entry point)
+├── pdf_context.py                  # Gemeinsamer PDF-Export-Context (klassisch + modern)
 ├── constants.py                    # Shared constants (days, colors, paths)
 ├── utils.py                        # Utilities (time conversion, validation)
+├── html_pdf/                       # Modern-PDF: Jinja2, CSS, Roboto, Playwright
 ├── calendar_render.py              # Calendar HTML/CSS/JS rendering
 ├── calendar_component/             # Bidirectional Streamlit component
 │   ├── __init__.py                 # Python wrapper (declare_component)
@@ -170,7 +192,7 @@ Die **Plan-Notiz** (über dem Raster) wird wie bisher als Untertitel unter dem P
 2. Titel + Plan-Notiz eingeben
 3. „PDF erzeugen" → „PDF herunterladen"
 4. Eintrag-Notizen: sichtbar im Block (bei ausreichend hohem Termin) und zusätzlich als klickbare Sticky-Note-Icons
-5. Im farbigen Termin: **Startzeit** optional oben links; **Name und Notiz** darunter **oben ausgerichtet** (nicht vertikal zentriert), mit an die Blockhöhe angepassten Schriftgrößen
+5. Im farbigen Termin: **Startzeit** optional oben links; **Name und Notiz** darunter **oben** und **zeilenweise am Zeilenanfang** ausgerichtet (nicht vertikal zentriert), mit an die Blockhöhe angepassten Schriftgrößen (**Modern-PDF:** Stufen `xs`–`lg`)
 
 ### CSV-Export
 - Sidebar → Dateiverwaltung → „CSV exportieren"

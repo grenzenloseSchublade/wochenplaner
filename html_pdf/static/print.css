@@ -1,0 +1,286 @@
+@import "tokens.css";
+@import "typography.css";
+
+@page {
+  size: A4 landscape;
+  margin: 7mm 7mm 5mm 10mm;
+}
+
+@page a5land {
+  size: A5 landscape;
+  margin: 5mm 5mm 4mm 8mm;
+}
+
+body.page--a5 {
+  page: a5land;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  padding: 0;
+  font-family: "Roboto", system-ui, sans-serif;
+  background: var(--md-sys-color-surface);
+  color: var(--md-sys-color-on-surface);
+  font-variant-numeric: tabular-nums;
+  -webkit-print-color-adjust: exact;
+  print-color-adjust: exact;
+}
+
+.page {
+  width: 100%;
+  min-height: 100vh;
+  padding: 0;
+}
+
+.page-title {
+  margin: 0 0 var(--md-space-xs) 0;
+  text-align: center;
+  font-size: var(--md-typescale-title-size);
+  font-weight: 600;
+  color: var(--md-sys-color-on-surface);
+  letter-spacing: 0.01em;
+}
+
+.plan-note {
+  margin: 0 0 var(--md-space-sm) 0;
+  text-align: center;
+  font-size: var(--md-typescale-body-size);
+  font-weight: 400;
+  color: var(--md-sys-color-on-surface-variant);
+  max-width: 95%;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+/* Wochentags-Leiste: klar lesbar, optisch vom Raster getrennt */
+.day-header-row {
+  display: grid;
+  grid-template-columns: 9mm repeat(7, 1fr) 9mm;
+  margin-bottom: 0;
+  background: var(--md-weekday-row-bg);
+  border-radius: var(--md-radius-sm) var(--md-radius-sm) 0 0;
+  box-shadow: inset 0 -1px 0 0 var(--md-sys-color-outline-variant);
+}
+
+.day-head {
+  text-align: center;
+  padding: 2.8mm 1mm 2.2mm;
+  font-size: var(--md-typescale-weekday-size);
+  font-weight: 700;
+  letter-spacing: 0.03em;
+  color: var(--md-sys-color-on-surface);
+  border-bottom: 3px solid var(--md-sys-color-primary);
+  background: transparent;
+}
+
+.day-head--weekend {
+  border-bottom-color: var(--md-sys-color-tertiary);
+  color: var(--md-sys-color-on-surface-variant);
+  font-weight: 600;
+}
+
+.grid-wrap {
+  display: grid;
+  grid-template-columns: 9mm repeat(7, 1fr) 9mm;
+  align-items: stretch;
+  min-height: 0;
+  background: var(--md-sys-color-surface);
+  border: 0.5px solid var(--md-sys-color-outline-variant);
+  border-top: none;
+  border-radius: 0 0 var(--md-radius-sm) var(--md-radius-sm);
+}
+
+.axis {
+  position: relative;
+  font-size: var(--md-typescale-label-size);
+  color: var(--md-sys-color-on-surface-variant);
+}
+
+.axis-inner {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 0;
+  bottom: 0;
+}
+
+/* Innen zum Raster ausrichten (Zahlen am Gitter) */
+.axis-label {
+  position: absolute;
+  left: 0;
+  right: 0;
+  transform: translateY(-50%);
+  text-align: right;
+  padding-right: 0.8mm;
+}
+
+.axis--right .axis-label {
+  text-align: left;
+  padding-right: 0;
+  padding-left: 0.8mm;
+}
+
+.day-col {
+  position: relative;
+  border-left: 0.55px solid var(--md-sys-color-outline);
+}
+
+.day-col:last-of-type {
+  border-right: 0.55px solid var(--md-sys-color-outline);
+}
+
+.day-col--stripe-a .day-col-inner {
+  background: var(--md-day-col-stripe-a);
+}
+
+.day-col--stripe-b .day-col-inner {
+  background: var(--md-day-col-stripe-b);
+}
+
+.day-col-inner {
+  position: relative;
+  height: var(--grid-h, 150mm);
+  border-bottom: 0.5px solid var(--md-sys-color-outline);
+}
+
+.day-col-inner--lines {
+  background-image: linear-gradient(
+    to bottom,
+    rgba(29, 27, 32, 0.06) 0.35px,
+    transparent 0.35px
+  );
+  background-size: 100% calc(100% / var(--slot-count, 16));
+}
+
+.day-col-inner--continuous {
+  background-image: linear-gradient(
+    to bottom,
+    rgba(29, 27, 32, 0.05) 0.3px,
+    transparent 0.3px
+  );
+  background-size: 100% calc(100% / var(--half-slot-count, 32));
+}
+
+/* Kacheln: linksbündiger Fließtext */
+.tile {
+  position: absolute;
+  left: 1px;
+  right: 1px;
+  border-radius: var(--md-radius-tile);
+  border: 0.35px solid rgba(29, 27, 32, 0.18);
+  box-shadow: var(--md-elevation-hairline);
+  overflow: hidden;
+  padding: 1px 3px 2px;
+  break-inside: avoid;
+  page-break-inside: avoid;
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  text-align: start;
+}
+
+.tile--compact {
+  justify-content: center;
+  align-items: center;
+  text-align: center;
+  padding: 0 2px;
+}
+
+.tile__corner {
+  flex-shrink: 0;
+  font-weight: 500;
+  line-height: 1.1;
+  margin-bottom: 0.5px;
+  opacity: 0.92;
+}
+
+.tile__title {
+  font-weight: 700;
+  line-height: 1.18;
+  word-break: break-word;
+  overflow: hidden;
+  text-align: start;
+  /* mehrsprachig: begrenzte Zeilenzahl im PDF */
+  max-height: 4.5em;
+}
+
+.tile__title--single {
+  text-align: center;
+  max-height: 2.8em;
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+}
+
+.tile__note {
+  font-weight: 400;
+  line-height: 1.2;
+  margin-top: 1px;
+  overflow: hidden;
+  max-height: 3.2em;
+  text-align: start;
+}
+
+/* Stufen: xs = sehr klein … lg = großzügig */
+.tile--xs .tile__title--single {
+  font-size: 3.9pt;
+}
+
+.tile--xs .tile__corner,
+.tile--xs .tile__title,
+.tile--xs .tile__note {
+  font-size: 3.9pt;
+}
+
+.tile--sm .tile__corner {
+  font-size: 4.4pt;
+}
+
+.tile--sm .tile__title {
+  font-size: 4.9pt;
+  max-height: 5em;
+}
+
+.tile--sm .tile__note {
+  font-size: 4.35pt;
+  max-height: 3.5em;
+}
+
+.tile--md .tile__corner {
+  font-size: 4.8pt;
+}
+
+.tile--md .tile__title {
+  font-size: 5.6pt;
+  max-height: 6em;
+}
+
+.tile--md .tile__note {
+  font-size: 5pt;
+  max-height: 4em;
+}
+
+.tile--lg .tile__corner {
+  font-size: 5.2pt;
+}
+
+.tile--lg .tile__title {
+  font-size: 6.4pt;
+  max-height: 8em;
+}
+
+.tile--lg .tile__note {
+  font-size: 5.5pt;
+  max-height: 5em;
+}
+
+.page-footer {
+  margin-top: var(--md-space-sm);
+  text-align: center;
+  font-size: 5pt;
+  color: var(--md-sys-color-on-surface-variant);
+}

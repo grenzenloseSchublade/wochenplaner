@@ -29,6 +29,7 @@ from constants import (
     TIME_OPTIONS,
     WOCHENTAGE,
 )
+from html_pdf import render_html_pdf
 from i18n import (
     DAY_DISPLAY,
     DAY_FROM_DISPLAY,
@@ -37,7 +38,8 @@ from i18n import (
     Lang,
     t,
 )
-from pdf_export import generate_pdf
+from pdf_context import build_pdf_context
+from pdf_export import generate_pdf_from_context
 from plan_json import (
     MAX_JSON_UPLOAD_BYTES,
     PlanParseError,
@@ -178,8 +180,14 @@ def _export_csv(acts: list[Activity], lang: Lang = "de") -> str:
     for a in _sort_activities(acts):
         day_display = DAY_DISPLAY[lang].get(a["day"], a["day"])
         writer.writerow(
-            [a["name"], day_display, a["start"], a["end"], a["color"],
-             a.get("note", "")]
+            [
+                a["name"],
+                day_display,
+                a["start"],
+                a["end"],
+                a["color"],
+                a.get("note", ""),
+            ]
         )
     return buf.getvalue()
 
@@ -388,9 +396,7 @@ def _activity_form() -> None:
     acts: list[Activity] = st.session_state.activities
 
     all_names = list(AKTIVITAETEN_FARBEN) + [
-        n
-        for n in st.session_state.custom_activities
-        if n not in AKTIVITAETEN_FARBEN
+        n for n in st.session_state.custom_activities if n not in AKTIVITAETEN_FARBEN
     ]
     day_names = WOCHENTAGE_I18N[lang]
     day_from_display = DAY_FROM_DISPLAY[lang]
@@ -411,9 +417,7 @@ def _activity_form() -> None:
                 st.text_input(t("activity_name", lang), key="custom_name")
             )
         else:
-            name = st.selectbox(
-                t("activity", lang), all_names, key="sel_activity"
-            )
+            name = st.selectbox(t("activity", lang), all_names, key="sel_activity")
 
         # Auto-update color only when a *preset* activity is selected in add mode.
         # Custom names (typed char-by-char) and edit mode never auto-change the color.
@@ -457,7 +461,9 @@ def _activity_form() -> None:
             bis = st.selectbox(t("to_time", lang), bo, key="sel_to")
 
         note = st.text_area(
-            t("note", lang), height=68, key="inp_note",
+            t("note", lang),
+            height=68,
+            key="inp_note",
             placeholder=t("note_placeholder", lang),
         )
 
@@ -507,9 +513,7 @@ def _activity_form() -> None:
         elif t2m(bis) <= t2m(von):
             st.error(t("end_after_start", lang))
         else:
-            _conflicts = check_overlap(
-                acts, tag_de, von, bis, ea["id"] if ea else None
-            )
+            _conflicts = check_overlap(acts, tag_de, von, bis, ea["id"] if ea else None)
             if _conflicts:
                 _cn = ", ".join(c["name"] for c in _conflicts)
                 st.warning(f"{t('overlap_with', lang)} **{_cn}**")
@@ -597,8 +601,7 @@ def _entries_fragment() -> None:
                 f"{html_lib.escape(_day_short)}&nbsp;"
                 f"{html_lib.escape(_act['start'])}"
                 f"\u2013{html_lib.escape(_act['end'])}"
-                "</div>"
-                + _note_preview,
+                "</div>" + _note_preview,
                 unsafe_allow_html=True,
             )
             # ── Quick-move arrows ◀ ▲ ▼ ▶ ────────────────────────
@@ -696,6 +699,7 @@ def main() -> None:
         ("plan_note", ""),
         ("pdf_bytes", None),
         ("pdf_format", "DIN-A4"),
+        ("pdf_export_style", "modern_html"),
         ("custom_activities", None),
         ("activity_colors", None),
         ("lang", "de"),
@@ -910,16 +914,14 @@ def main() -> None:
                 ls_save("plan_note", _new_plan_note, f"pnote_{_ls_counter}")
 
             fmt = st.radio(
-                t("format", lang), ["DIN A4", "DIN A5"],
-                horizontal=True, key="pdf_fmt",
+                t("format", lang),
+                ["DIN A4", "DIN A5"],
+                horizontal=True,
+                key="pdf_fmt",
             )
             with st.expander(t("time_range", lang), expanded=False):
-                sh_s = st.slider(
-                    t("start_hour", lang), 0, 23, START_HOUR, key="pdf_sh"
-                )
-                eh_s = st.slider(
-                    t("end_hour", lang), 1, 24, END_HOUR, key="pdf_eh"
-                )
+                sh_s = st.slider(t("start_hour", lang), 0, 23, START_HOUR, key="pdf_sh")
+                eh_s = st.slider(t("end_hour", lang), 1, 24, END_HOUR, key="pdf_eh")
             show_axis_times = st.checkbox(
                 t("pdf_show_axis_times", lang),
                 value=True,
@@ -938,6 +940,18 @@ def main() -> None:
                 key="pdf_continuous_hgrid",
                 help=t("pdf_continuous_hgrid_help", lang),
             )
+            st.radio(
+                t("pdf_export_mode", lang),
+                ["classic", "modern_html"],
+                horizontal=True,
+                key="pdf_export_style",
+                format_func=lambda m: (
+                    t("pdf_style_classic", lang)
+                    if m == "classic"
+                    else t("pdf_style_modern", lang)
+                ),
+            )
+            st.caption(t("pdf_style_hint", lang))
             if st.button(
                 t("generate_pdf", lang),
                 width="stretch",
@@ -951,7 +965,7 @@ def main() -> None:
                 else:
                     with st.spinner(t("generating_pdf", lang)):
                         st.session_state.pdf_format = fmt.replace(" ", "-")
-                        st.session_state.pdf_bytes = generate_pdf(
+                        pdf_ctx = build_pdf_context(
                             acts,
                             paper_format=fmt.replace("DIN ", ""),
                             start_hour=sh_s,
@@ -963,6 +977,25 @@ def main() -> None:
                             show_block_times=show_block_times,
                             continuous_horizontal_grid=continuous_horizontal_grid,
                         )
+                        try:
+                            if (
+                                st.session_state.get("pdf_export_style")
+                                == "modern_html"
+                            ):
+                                st.session_state.pdf_bytes = render_html_pdf(pdf_ctx)
+                            else:
+                                st.session_state.pdf_bytes = generate_pdf_from_context(
+                                    pdf_ctx
+                                )
+                        except Exception as exc:
+                            st.session_state.pdf_bytes = None
+                            _fail = (
+                                t("pdf_modern_failed", lang)
+                                if st.session_state.get("pdf_export_style")
+                                == "modern_html"
+                                else t("pdf_export_failed", lang)
+                            )
+                            st.error(f"{_fail} ({exc!s})")
             if st.session_state.pdf_bytes is not None:
                 _slug = slugify(st.session_state.plan_title)
                 _fmt_slug = slugify(st.session_state.get("pdf_format", "DIN-A4"))
@@ -1024,16 +1057,14 @@ def main() -> None:
                                 except PlanParseError:
                                     st.error(t("json_invalid_plan", lang))
                                 else:
-                                    _has_act_list = (
-                                        isinstance(raw, dict)
-                                        and isinstance(raw.get("activities"), list)
-                                    )
+                                    _has_act_list = isinstance(
+                                        raw, dict
+                                    ) and isinstance(raw.get("activities"), list)
                                     _empty_with_meta = (
                                         _has_act_list
                                         and len(raw["activities"]) == 0
                                         and (
-                                            tit_upd is not None
-                                            or note_upd is not None
+                                            tit_upd is not None or note_upd is not None
                                         )
                                     )
                                     if not valid and not _empty_with_meta:
@@ -1090,7 +1121,7 @@ def main() -> None:
         st.markdown(
             "<div style='text-align:center;padding:16px 0 4px;"
             "font-size:11px;color:#aaa;letter-spacing:.02em'>"
-            "v1.4.2 · "
+            "v1.5.0 · "
             "<a href='https://github.com/grenzenloseSchublade/wochenplaner'"
             " target='_blank' style='color:#888;text-decoration:none'>"
             "GitHub</a></div>",
@@ -1112,9 +1143,7 @@ def main() -> None:
             _pn_display = _pn[:100] + ("…" if len(_pn) > 100 else "")
             _th += (
                 "<p style='text-align:center;font-size:.82rem;"
-                "color:#888;margin-bottom:8px'>"
-                + html_lib.escape(_pn_display)
-                + "</p>"
+                "color:#888;margin-bottom:8px'>" + html_lib.escape(_pn_display) + "</p>"
             )
         else:
             _th += "<div style='margin-bottom:12px'></div>"

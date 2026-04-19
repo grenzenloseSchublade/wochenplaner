@@ -44,7 +44,9 @@ def _hex_rgb(h: str) -> tuple[int, int, int]:
 
 
 def _rgb_hex(r: int, g: int, b: int) -> str:
-    return f"#{max(0, min(255, r)):02x}{max(0, min(255, g)):02x}{max(0, min(255, b)):02x}"
+    return (
+        f"#{max(0, min(255, r)):02x}{max(0, min(255, g)):02x}{max(0, min(255, b)):02x}"
+    )
 
 
 def get_secondary_text_color(bg: str, primary: str | None = None) -> str:

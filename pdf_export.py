@@ -15,6 +15,7 @@ from reportlab.pdfgen.canvas import Canvas
 
 from constants import PX_PER_MIN, WOCHENTAGE
 from i18n import WOCHENTAGE_KURZ_I18N, Lang, t
+from pdf_context import PdfExportContext, build_pdf_context
 from utils import Activity, get_secondary_text_color, inline_note_fits_block_height
 
 # Mindestdauer in Minuten, ab der der Aktivitätsname im Block erscheint (nicht nur Ecke/Kurzform)
@@ -182,9 +183,7 @@ def _draw_activity_text(
         c.restoreState()
         return
 
-    reserved_corner = (
-        corner_fs * 1.15 + CORNER_PAD_PT + 1.5 if draw_corner else 0.0
-    )
+    reserved_corner = corner_fs * 1.15 + CORNER_PAD_PT + 1.5 if draw_corner else 0.0
     title_zone_top = inner_top - reserved_corner
 
     fs = _initial_title_fs(height)
@@ -269,9 +268,7 @@ def _draw_activity_text(
         if show_note_draw:
             last_bl = first_baseline - (len(name_lines) - 1) * lh
             n_y = last_bl - 3.0 - note_fs * 0.72
-            note_lines_pdf = _wrap_text(
-                note_s, "Helvetica", note_fs, max_text_w, 2
-            )
+            note_lines_pdf = _wrap_text(note_s, "Helvetica", note_fs, max_text_w, 2)
             c.setFillColor(_secondary_text_color_pdf(block_color_hex))
             for nline in note_lines_pdf:
                 if n_y < inner_bottom + 1.5:
@@ -340,19 +337,19 @@ def _draw_axis_time_labels(
         c.drawString(label_x_right, y - 1.5, f"{h:02d}:00")
 
 
-def generate_pdf(
-    activities: Sequence[Activity],
-    paper_format: str = "A4",
-    start_hour: int = 6,
-    end_hour: int = 22,
-    title: str = "Wochenplan",
-    lang: Lang = "de",
-    plan_note: str = "",
-    *,
-    show_axis_times: bool = True,
-    show_block_times: bool = True,
-    continuous_horizontal_grid: bool = False,
-) -> bytes:
+def generate_pdf_from_context(ctx: PdfExportContext) -> bytes:
+    """ReportLab-PDF aus gemeinsamem [`PdfExportContext`](pdf_context.py)."""
+    activities = ctx["activities"]
+    paper_format = ctx["paper_format"]
+    start_hour = ctx["start_hour"]
+    end_hour = ctx["end_hour"]
+    title = ctx["title"]
+    lang = ctx["lang"]
+    plan_note = ctx["plan_note"]
+    show_axis_times = ctx["show_axis_times"]
+    show_block_times = ctx["show_block_times"]
+    continuous_horizontal_grid = ctx["continuous_horizontal_grid"]
+
     page_size = landscape(A4) if paper_format == "A4" else landscape(A5)
     page_w, page_h = page_size
 
@@ -557,9 +554,7 @@ def generate_pdf(
                 ann = PDFDictionary()
                 ann["Type"] = "/Annot"
                 ann["Subtype"] = "/Text"
-                ann["Rect"] = PDFArray(
-                    [ann_x, ann_y, ann_x + ann_s, ann_y + ann_s]
-                )
+                ann["Rect"] = PDFArray([ann_x, ann_y, ann_x + ann_s, ann_y + ann_s])
                 ann["Contents"] = PDFString(note_text)
                 ann["T"] = PDFString(name)
                 ann["Name"] = "/Comment"
@@ -607,9 +602,7 @@ def generate_pdf(
                 ann = PDFDictionary()
                 ann["Type"] = "/Annot"
                 ann["Subtype"] = "/Text"
-                ann["Rect"] = PDFArray(
-                    [ann_x, ann_y, ann_x + ann_s, ann_y + ann_s]
-                )
+                ann["Rect"] = PDFArray([ann_x, ann_y, ann_x + ann_s, ann_y + ann_s])
                 ann["Contents"] = PDFString(note_text)
                 ann["T"] = PDFString(str(ob["name"]))
                 ann["Name"] = "/Comment"
@@ -625,3 +618,32 @@ def generate_pdf(
     c.save()
     buf.seek(0)
     return buf.read()
+
+
+def generate_pdf(
+    activities: Sequence[Activity],
+    paper_format: str = "A4",
+    start_hour: int = 6,
+    end_hour: int = 22,
+    title: str = "Wochenplan",
+    lang: Lang = "de",
+    plan_note: str = "",
+    *,
+    show_axis_times: bool = True,
+    show_block_times: bool = True,
+    continuous_horizontal_grid: bool = False,
+) -> bytes:
+    """Kompatibilitäts-API: baut Context und rendert klassisches PDF."""
+    ctx = build_pdf_context(
+        activities,
+        paper_format=paper_format,
+        start_hour=start_hour,
+        end_hour=end_hour,
+        title=title,
+        lang=lang,
+        plan_note=plan_note,
+        show_axis_times=show_axis_times,
+        show_block_times=show_block_times,
+        continuous_horizontal_grid=continuous_horizontal_grid,
+    )
+    return generate_pdf_from_context(ctx)

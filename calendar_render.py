@@ -117,9 +117,7 @@ def _ctx_menu_js(edit_label: str, component_mode: bool = False) -> str:
         "  document.body.appendChild(m);"
         "  _menu=m;"
         "  m.querySelector('.ctx-edit').addEventListener('click',function(e2){"
-        "    e2.preventDefault();hideCtx();"
-        + edit_action
-        + "  });"
+        "    e2.preventDefault();hideCtx();" + edit_action + "  });"
         "}"
     )
 
@@ -173,9 +171,7 @@ def _activity_block(
         if (note_stripped and not show_note_inline)
         else ""
     )
-    title_attr = html_lib.escape(
-        f"{act['start']}\u2013{act['end']} · {act['name']}"
-    )
+    title_attr = html_lib.escape(f"{act['start']}\u2013{act['end']} · {act['name']}")
     parts: list[str] = []
     # Zeit erst ab genug Höhe (sonst nur Titel im Band 22–27 px sichtbar)
     if ht >= 28:
@@ -185,9 +181,7 @@ def _activity_block(
     if show_note_inline:
         _sn = html_lib.escape(note_stripped)
         _sec = get_secondary_text_color(c, tc)
-        parts.append(
-            f'<span class="act-note-inline" style="color:{_sec}">{_sn}</span>'
-        )
+        parts.append(f'<span class="act-note-inline" style="color:{_sec}">{_sn}</span>')
     if ht >= 38:
         parts.append(f'<span class="act-dur">{ds}</span>')
     body = "".join(parts)
@@ -202,10 +196,7 @@ def _activity_block(
         f'data-start="{s}" data-end="{e}" data-color="{c}"{note_attr} '
         f'style="top:{top:.1f}px;height:{ht:.1f}px;background:{c};'
         f'color:{tc};border-left-color:{bc}" '
-        f'onclick="showCtx(event,this)">'
-        + note_icon
-        + body
-        + "</div>"
+        f'onclick="showCtx(event,this)">' + note_icon + body + "</div>"
     )
 
 

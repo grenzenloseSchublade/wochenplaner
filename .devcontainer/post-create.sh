@@ -22,6 +22,12 @@ else
 fi
 
 echo ""
+echo "🌐 Playwright Chromium (Modern-PDF) – Cache + Browser"
+sudo mkdir -p /home/vscode/.cache/ms-playwright
+sudo chown -R vscode:vscode /home/vscode/.cache/ms-playwright
+uv run playwright install chromium
+
+echo ""
 echo "✅ Setup abgeschlossen."
 echo "   App starten: uv run streamlit run app.py"
 echo "   oder kurz:   start   (Shell-Alias)"

@@ -1,0 +1,18 @@
+<article
+  class="tile tile--{{ b.size_tier }}{% if b.size_tier == 'xs' %} tile--compact{% endif %}"
+  style="top: {{ b.top_pct }}%; height: {{ b.height_pct }}%; background-color: {{ b.bg }}; color: {{ b.text_color }};"
+>
+  {% if b.size_tier == 'xs' %}
+  <div class="tile__title tile__title--single" style="color: {{ b.text_color }};">{{ b.name }}</div>
+  {% else %}
+    {% if b.show_corner %}
+    <div class="tile__corner" style="color: {{ b.text_color }};">{{ b.start_str }}</div>
+    {% endif %}
+    {% if b.show_name %}
+    <div class="tile__title" style="color: {{ b.text_color }};">{{ b.name }}</div>
+    {% endif %}
+    {% if b.show_note and b.note %}
+    <div class="tile__note" style="color: {{ b.note_color }};">{{ b.note }}</div>
+    {% endif %}
+  {% endif %}
+</article>
