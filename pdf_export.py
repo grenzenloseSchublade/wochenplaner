@@ -13,9 +13,9 @@ from reportlab.pdfbase.pdfdoc import PDFArray, PDFDictionary, PDFString
 from reportlab.pdfbase.pdfmetrics import stringWidth
 from reportlab.pdfgen.canvas import Canvas
 
-from constants import WOCHENTAGE
+from constants import PX_PER_MIN, WOCHENTAGE
 from i18n import WOCHENTAGE_KURZ_I18N, Lang, t
-from utils import Activity
+from utils import Activity, get_secondary_text_color, inline_note_fits_block_height
 
 # Mindestdauer in Minuten, ab der der Aktivitätsname im Block erscheint (nicht nur Ecke/Kurzform)
 MIN_MINUTES_FOR_NAME = 18
@@ -28,6 +28,21 @@ MIN_HEIGHT_FOR_CORNER_PT = 12.0
 MICRO_BLOCK_PT = 12.0
 
 LABEL_PAD_MM = 1.0
+
+# Blocktext: Top-Alignment unter Eckzeit; Notiz gekoppelt an Titelschrift
+PAD_TOP_TITLE_PT = 1.5
+NOTE_FS_MIN = 3.85
+NOTE_FS_MAX = 5.4
+NOTE_TO_TITLE_RATIO = 0.86
+
+
+def _initial_title_fs(height: float) -> float:
+    """Gestufte Startgröße für Helvetica-Bold Titel (weniger Streuung als reines height*0.2)."""
+    if height < 22:
+        return max(4.4, min(5.8, height * 0.21))
+    if height < 40:
+        return max(5.2, min(6.4, height * 0.175))
+    return max(5.6, min(7.2, height * 0.168))
 
 
 def minutes_to_hhmm(total_minutes: int) -> str:
@@ -45,6 +60,10 @@ def _text_color(hex_str: str) -> Color:
     from utils import get_text_color
 
     return HexColor(get_text_color(hex_str))
+
+
+def _secondary_text_color_pdf(hex_str: str) -> Color:
+    return HexColor(get_secondary_text_color(hex_str))
 
 
 def _truncate_line(text: str, font: str, size: float, max_w: float) -> str:
@@ -113,16 +132,22 @@ def _draw_activity_text(
     dur_min: int,
     max_text_w: float,
     show_block_times: bool = True,
+    note: str = "",
+    block_color_hex: str = "#F3E5AB",
 ) -> None:
-    """Startzeit oben links, Name darunter im Restbereich vertikal zentriert; Clipping."""
+    """Startzeit oben links; Name und Notiz darunter oben ausgerichtet (nicht vertikal zentriert)."""
     cx = x + w / 2
     pad = BLOCK_PAD_PT
     max_inner = max(0.0, height - 2 * pad)
     inner_top = y + height - pad
     inner_bottom = y + pad
 
+    note_s = note.strip()
+    ht_px_equiv = float(dur_min) * PX_PER_MIN
+    want_note = bool(note_s) and inline_note_fits_block_height(ht_px_equiv)
+
     show_name = dur_min >= MIN_MINUTES_FOR_NAME
-    corner_fs = max(4.5, min(5.5, height * 0.065))
+    corner_fs = max(4.8, min(5.4, height * 0.06))
     reserved_corner_est = corner_fs * 1.15 + CORNER_PAD_PT + 1.5
     # Ecke unabhängig vom Namensbudget; nur Platz für die Eckzeile selbst nötig
     show_corner = (
@@ -160,14 +185,25 @@ def _draw_activity_text(
     reserved_corner = (
         corner_fs * 1.15 + CORNER_PAD_PT + 1.5 if draw_corner else 0.0
     )
+    title_zone_top = inner_top - reserved_corner
 
-    fs = max(5.0, min(7.5, height * 0.2))
+    fs = _initial_title_fs(height)
     name_lines: list[str] = []
+    show_note_draw = want_note
+    inner_name = inner_bottom
 
     for _ in range(28):
+        note_fs = max(NOTE_FS_MIN, min(NOTE_FS_MAX, fs * NOTE_TO_TITLE_RATIO))
+        note_line_h = note_fs * 1.15
+        note_block_h = (note_line_h * 2 + 1.5) if show_note_draw else 0.0
+        inner_name = inner_bottom + note_block_h
+        if show_note_draw and (title_zone_top - inner_name) < 5.0:
+            show_note_draw = False
+            note_block_h = 0.0
+            inner_name = inner_bottom
+
         lh = fs * 1.18
-        title_zone_top = inner_top - reserved_corner
-        zone_h = max(0.0, title_zone_top - inner_bottom)
+        zone_h = max(0.0, title_zone_top - inner_name)
         avail_for_names = zone_h - 2.0
         max_lines = max(1, min(5, int(avail_for_names / lh))) if show_name else 0
         if show_name and max_lines > 0:
@@ -185,11 +221,14 @@ def _draw_activity_text(
             content_h = len(name_lines) * lh
             if content_h <= avail_for_names:
                 break
-        fs = max(4.35, fs - 0.3)
+        fs = max(4.35, fs - 0.35)
 
     lh = fs * 1.18
-    title_zone_top = inner_top - reserved_corner
-    zone_h = max(0.0, title_zone_top - inner_bottom)
+    note_fs = max(NOTE_FS_MIN, min(NOTE_FS_MAX, fs * NOTE_TO_TITLE_RATIO))
+    note_line_h = note_fs * 1.15
+    note_block_h = (note_line_h * 2 + 1.5) if show_note_draw else 0.0
+    inner_name = inner_bottom + note_block_h
+    zone_h = max(0.0, title_zone_top - inner_name)
     content_h = len(name_lines) * lh if name_lines else 0.0
 
     while name_lines and len(name_lines) * lh > zone_h + 0.5 and len(name_lines) > 1:
@@ -208,10 +247,9 @@ def _draw_activity_text(
         c.drawString(x + CORNER_PAD_PT, time_baseline, start_str)
 
     if show_name and name_lines:
-        safe_content_h = min(content_h, max(0.0, zone_h))
-        first_baseline = title_zone_top - (zone_h - safe_content_h) / 2 - fs * 0.72
+        first_baseline = title_zone_top - PAD_TOP_TITLE_PT - fs * 0.72
         last_baseline = first_baseline - (len(name_lines) - 1) * lh
-        if last_baseline < inner_bottom + 1.0 or zone_h < fs:
+        if last_baseline < inner_name + 0.8 or zone_h < fs:
             nfs = max(4.35, min(fs, 6.5))
             c.setFont("Helvetica-Bold", nfs)
             c.setFillColor(tc)
@@ -228,6 +266,19 @@ def _draw_activity_text(
             c.setFillColor(tc)
             c.drawCentredString(cx, cur, line)
             cur -= lh
+        if show_note_draw:
+            last_bl = first_baseline - (len(name_lines) - 1) * lh
+            n_y = last_bl - 3.0 - note_fs * 0.72
+            note_lines_pdf = _wrap_text(
+                note_s, "Helvetica", note_fs, max_text_w, 2
+            )
+            c.setFillColor(_secondary_text_color_pdf(block_color_hex))
+            for nline in note_lines_pdf:
+                if n_y < inner_bottom + 1.5:
+                    break
+                c.setFont("Helvetica", note_fs)
+                c.drawCentredString(cx, n_y, nline)
+                n_y -= note_line_h
     elif not show_name:
         nfs = max(4.5, fs - 0.5)
         c.setFont("Helvetica-Bold", nfs)
@@ -478,6 +529,7 @@ def generate_pdf(
                     "dur_min": dur_min,
                     "max_text_w": max_text_w,
                     "note": act.get("note", "").strip(),
+                    "bg_hex": color_hex,
                 }
             )
         else:
@@ -493,6 +545,8 @@ def generate_pdf(
                 dur_min=dur_min,
                 max_text_w=max_text_w,
                 show_block_times=show_block_times,
+                note=str(act.get("note", "") or "").strip(),
+                block_color_hex=str(color_hex),
             )
 
             note_text = act.get("note", "").strip()
@@ -538,6 +592,8 @@ def generate_pdf(
                 dur_min=int(ob["dur_min"]),
                 max_text_w=float(ob["max_text_w"]),
                 show_block_times=show_block_times,
+                note=str(ob.get("note", "") or ""),
+                block_color_hex=str(ob.get("bg_hex", "#F3E5AB")),
             )
             note_text = str(ob.get("note", "") or "")
             if note_text:

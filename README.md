@@ -126,10 +126,9 @@ ohne einen vollständigen Browser-Reload auszulösen.
 
 ### Notizen im PDF
 
-Eintrag-Notizen werden als **PDF Text-Annotations (Sticky Notes)** exportiert.
-Diese sind im PDF-Reader als kleine Icons sichtbar und zeigen den Notiztext als Popup beim Klick.
-Das Kalender-Layout bleibt dabei unverändert.
-Die Plan-Notiz wird als sichtbarer Untertitel unter dem Titel gerendert.
+**Eintrag-Notizen** erscheinen im PDF **als kurzer Text unter dem Aktivitätsnamen** im farbigen Block (wenn der Block hoch genug ist); die Farbe passt sich der Blockfarbe an.
+Zusätzlich bleiben **Text-Annotations (Sticky Notes)** erhalten: kleine Icons mit vollem Notiztext per Klick.
+Die **Plan-Notiz** (über dem Raster) wird wie bisher als Untertitel unter dem Plantitel gerendert.
 
 ---
 
@@ -145,13 +144,14 @@ Die Plan-Notiz wird als sichtbarer Untertitel unter dem Titel gerendert.
 ### Kalender-Bearbeitung / Calendar editing
 - Klick auf einen Block im Kalender öffnet das Kontextmenü mit Notiz-Vorschau
 - „Bearbeiten" öffnet das Formular mit vorausgefüllten Werten (kein Seitenreload)
+- **Eintrag-Notiz im Raster**: Steht der Block hoch genug, erscheint die Notiz **unter dem Aktivitätsnamen** (kleiner, nicht fett, Farbe mit Kontrast zur Blockfarbe); bei sehr flachen Blöcken nur ein Stift-Icon als Hinweis
 
 ### Notizen / Notes
 - **Eintrag-Notiz**: Pro Aktivität ein 2-zeiliges Textfeld (z.B. „Raum 204, mit Max")
 - **Plan-Notiz**: Mehrzeiliges Feld im PDF-Bereich (z.B. „KW 15 – Urlaubswoche")
 - **JSON**: Plantitel, Plan-Notiz und Eintrags-Notizen werden in der JSON-Datei gespeichert
 - **CSV**: nur Eintrags-Notizen (Spalte „Notiz“), kein Plantitel und keine Plan-Notiz
-- **PDF**: Plantitel, Plan-Notiz und Eintrags-Notizen (als Anmerkungen)
+- **PDF**: Plantitel, Plan-Notiz; Eintrags-Notizen im Block (soweit Platz) **und** als Sticky-Annotation
 
 ### Plan speichern & laden / Save & load
 - **Plan speichern (JSON)** → Datei auf Gerät speichern (einheitliches Format mit Titel, Plan-Notiz und Aktivitäten)
@@ -169,7 +169,8 @@ Die Plan-Notiz wird als sichtbarer Untertitel unter dem Titel gerendert.
 1. Format: DIN A4 oder A5 (Querformat)
 2. Titel + Plan-Notiz eingeben
 3. „PDF erzeugen" → „PDF herunterladen"
-4. Eintrag-Notizen erscheinen als klickbare Sticky-Note-Icons im PDF
+4. Eintrag-Notizen: sichtbar im Block (bei ausreichend hohem Termin) und zusätzlich als klickbare Sticky-Note-Icons
+5. Im farbigen Termin: **Startzeit** optional oben links; **Name und Notiz** darunter **oben ausgerichtet** (nicht vertikal zentriert), mit an die Blockhöhe angepassten Schriftgrößen
 
 ### CSV-Export
 - Sidebar → Dateiverwaltung → „CSV exportieren"

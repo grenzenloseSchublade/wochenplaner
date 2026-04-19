@@ -4,7 +4,7 @@ import re
 import unicodedata
 from typing import NotRequired, TypedDict
 
-from constants import END_HOUR, START_HOUR, WOCHENTAGE
+from constants import END_HOUR, PX_PER_MIN, START_HOUR, WOCHENTAGE
 
 
 class Activity(TypedDict):
@@ -34,6 +34,47 @@ def get_text_color(bg: str) -> str:
         0.299 * int(hx[0:2], 16) + 0.587 * int(hx[2:4], 16) + 0.114 * int(hx[4:6], 16)
     ) / 255
     return "#333" if lum > 0.5 else "#eee"
+
+
+def _hex_rgb(h: str) -> tuple[int, int, int]:
+    hx = h.lstrip("#")
+    if len(hx) == 3:
+        hx = "".join(c * 2 for c in hx)
+    return int(hx[0:2], 16), int(hx[2:4], 16), int(hx[4:6], 16)
+
+
+def _rgb_hex(r: int, g: int, b: int) -> str:
+    return f"#{max(0, min(255, r)):02x}{max(0, min(255, g)):02x}{max(0, min(255, b)):02x}"
+
+
+def get_secondary_text_color(bg: str, primary: str | None = None) -> str:
+    """Sekundärtext auf farbigem Block: Mischung aus Titelfarbe und Hintergrund (~38 %)."""
+    bg_v = validate_color(bg)
+    pr = primary or get_text_color(bg_v)
+    br, bgg, bb = _hex_rgb(bg_v)
+    r1, g1, b1 = _hex_rgb(pr)
+    t = 0.38
+    r = int(r1 * (1 - t) + br * t)
+    g = int(g1 * (1 - t) + bgg * t)
+    b = int(b1 * (1 - t) + bb * t)
+    return _rgb_hex(r, g, b)
+
+
+def inline_note_fits_block_height(ht_px: float) -> bool:
+    """Genug Höhe (Kalender-Pixel oder dur_min * PX_PER_MIN) für Inline-Notiz unter dem Namen."""
+    # Volle Stunde im Raster: zuverlässig Inline-Notiz (auch bei etwas größerer Notizschrift)
+    if ht_px + 1e-9 >= 60.0 * PX_PER_MIN:
+        return True
+    slack = 3.0
+    need = 0.0
+    if ht_px >= 28:
+        need += 11.0
+    if ht_px >= 22:
+        need += 11.0
+    need += 22.0  # zwei Notizzeilen (größere Schrift als früher 9px)
+    if ht_px >= 38:
+        need += 10.0
+    return ht_px >= need + slack
 
 
 def darken(hex_c: str, factor: float = 0.68) -> str:

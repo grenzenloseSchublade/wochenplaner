@@ -8,7 +8,15 @@ import streamlit as st
 
 from constants import PX_PER_MIN, WOCHENTAGE
 from i18n import WOCHENTAGE_KURZ_I18N, Lang
-from utils import Activity, darken, get_text_color, t2m, validate_color
+from utils import (
+    Activity,
+    darken,
+    get_secondary_text_color,
+    get_text_color,
+    inline_note_fits_block_height,
+    t2m,
+    validate_color,
+)
 
 _STATIC_DIR = Path(__file__).parent / "static"
 
@@ -156,9 +164,15 @@ def _activity_block(
     n = html_lib.escape(act["name"])
     s = html_lib.escape(act["start"])
     e = html_lib.escape(act["end"])
-    note_raw = act.get("note", "")
+    note_raw = act.get("note", "") or ""
     note_attr = f' data-note="{html_lib.escape(note_raw)}"' if note_raw else ""
-    note_icon = '<span class="act-note-icon">&#9998;</span>' if note_raw else ""
+    note_stripped = note_raw.strip()
+    show_note_inline = bool(note_stripped) and inline_note_fits_block_height(ht)
+    note_icon = (
+        '<span class="act-note-icon">&#9998;</span>'
+        if (note_stripped and not show_note_inline)
+        else ""
+    )
     title_attr = html_lib.escape(
         f"{act['start']}\u2013{act['end']} · {act['name']}"
     )
@@ -168,6 +182,12 @@ def _activity_block(
         parts.append(f'<span class="act-time">{s}\u2013{e}</span>')
     if ht >= 22:
         parts.append(f'<span class="act-name">{n}</span>')
+    if show_note_inline:
+        _sn = html_lib.escape(note_stripped)
+        _sec = get_secondary_text_color(c, tc)
+        parts.append(
+            f'<span class="act-note-inline" style="color:{_sec}">{_sn}</span>'
+        )
     if ht >= 38:
         parts.append(f'<span class="act-dur">{ds}</span>')
     body = "".join(parts)
