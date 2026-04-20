@@ -20,6 +20,16 @@ Ab **v1.5.0** gibt es **zwei PDF-Modi** in der Sidebar unter „PDF erzeugen“:
 
 **Modern-PDF:** nach `uv sync` einmal `uv run playwright install chromium`. Unter Linux braucht Chromium typisch Systembibliotheken (z. B. `libatk`, `libgbm` – im **Devcontainer** sind sie im `Dockerfile` und `post-create.sh` abgedeckt).
 
+**Modern-PDF: drei wählbare Stile** (Sidebar → „PDF-Stil (Modern)"):
+
+| Stil | Charakter |
+|------|-----------|
+| **Minimal** | ruhig, editorial; keine Akzentfarben, keine Flächen – nur Typografie- und Linien-Hierarchie |
+| **Strukturiert** *(Standard)* | dezenter Primär-Akzent unter der Wochentagsleiste, Wochenend-Spalten leicht getönt, weiche Card-Umrandung |
+| **Ausgewogen** | Wochenend-Tint + klare Trennlinie Header/Raster, ohne Akzentfarbe |
+
+Die Zeitachse ist **links prominent** mit eigenem Hintergrund, **rechts leise** als Zweitorientierung (auf A4); bei **A5 wird die rechte Achse ausgeblendet**, um mehr Platz für die Blöcke zu gewinnen.
+
 **Ausrichtung im Raster:** Kacheln sind **links** (`text-align: start`) ausgerichtet; die **Stundenachsen** links/rechts sind bewusst **innen** zum Raster hin orientiert (Leserichtung), nicht zwingend zur Papierkante. Der **Footer** ist zentriert.
 
 **Streamlit Community Cloud** stellt oft **keinen** vollständigen Chromium-Stack bereit: dort bei Problemen den **klassischen** Modus nutzen.
@@ -49,7 +59,34 @@ Opens http://localhost:8501 in your browser automatically.
 3. Main file: `app.py`
 4. Fertig – `uv.lock` und `.python-version` werden automatisch erkannt
 
-Hinweis: **Modern-PDF** (Playwright/Chromium) ist dort oft **nicht** voll nutzbar; Nutzer können weiterhin **Klassisch** wählen.
+**Modern-PDF** (Playwright/Chromium) ist dort **standardmäßig nicht nutzbar**, weil Streamlit Community Cloud **keine** Browser-Binaries vorinstalliert. Endnutzer sollten in der Sidebar **Klassisch** wählen.
+
+#### Optional: Modern-PDF doch auf Streamlit Community Cloud (experimentell)
+
+Wer Modern-PDF auf Streamlit Community Cloud erzwingen will, kann folgenden Weg versuchen – **offiziell nicht unterstützt**, Risiken im Abschnitt unten:
+
+1. **Chromium-Systembibliotheken** via `packages.txt` im Repo-Root installieren lassen (Beispiel siehe [`packages.txt`](packages.txt) in diesem Repo – standardmäßig leer gelassen / auskommentiert).
+2. **Playwright-Browser** beim App-Start einmalig herunterladen. Dazu früh in `app.py` (vor dem ersten Modern-PDF-Export) z. B. bootstrap-mäßig ausführen:
+
+   ```python
+   import os, shutil, subprocess
+   if not shutil.which("chrome-headless-shell"):
+       subprocess.run(
+           ["playwright", "install", "--with-deps=false", "chromium"],
+           check=False,
+       )
+   ```
+
+3. App deployen und Logs prüfen.
+
+**Risiken / Grenzen:**
+
+- **Kaltstart-Verzögerung** beim ersten Lauf (Chromium-Download ~150 MB).
+- **Kein persistenter Speicher**: Der Download passiert bei jedem Container-Neustart erneut.
+- **Ressourcen-Limits** auf Community Cloud (RAM/CPU) können Chromium killen.
+- **Keine offizielle Unterstützung** – bricht ohne Vorwarnung, sobald Streamlit Cloud seine Umgebung ändert.
+
+Empfehlung: Für öffentliche Deployments **Klassisch** belassen; Modern-PDF lokal / self-hosted / im Devcontainer nutzen.
 
 ---
 
@@ -62,7 +99,7 @@ Hinweis: **Modern-PDF** (Playwright/Chromium) ist dort oft **nicht** voll nutzba
 | **CSV-Export** | Für Excel / Google Sheets | For Excel / Google Sheets |
 | **Notizen (pro Eintrag)** | 2-zeilige Notiz pro Aktivität, sichtbar im Kontextmenü | 2-line note per activity, visible in context menu |
 | **Notizen (Plan-Ebene)** | Mehrzeilige Notiz für den gesamten Wochenplan | Multi-line note for the whole week |
-| **PDF-Notizen (Sticky Notes)** | Eintrag-Notizen als klickbare PDF-Annotations | Activity notes as clickable PDF annotations |
+| **PDF-Notizen (Sticky Notes, nur Klassisch)** | Eintrag-Notizen als klickbare PDF-Annotations im Klassisch-Modus | Activity notes as clickable PDF annotations (Classic mode only) |
 | **Kalender-Direktbearbeitung** | Klick auf Block → Bearbeiten ohne Seitenreload | Click block → edit without page reload |
 | **Zweisprachig** | Deutsch + Englisch | German + English |
 | **Vorlagen** | Student, Fitness, Büro, Schichtplan, Beispiel | Student, Fitness, Office, Shift, Example |
@@ -149,7 +186,7 @@ ohne einen vollständigen Browser-Reload auszulösen.
 ### Notizen im PDF
 
 **Eintrag-Notizen** erscheinen im PDF **als kurzer Text unter dem Aktivitätsnamen** im farbigen Block (wenn der Block hoch genug ist); die Farbe passt sich der Blockfarbe an.
-Zusätzlich bleiben **Text-Annotations (Sticky Notes)** erhalten: kleine Icons mit vollem Notiztext per Klick.
+Im **Klassisch-Modus** bleiben zusätzlich **Text-Annotations (Sticky Notes)** erhalten: kleine Icons mit vollem Notiztext per Klick. Der **Modern-Modus** (HTML+Chromium) erzeugt kein Sticky-Note-Layer – dort ist der sichtbare Inline-Text die einzige Notiz im PDF.
 Die **Plan-Notiz** (über dem Raster) wird wie bisher als Untertitel unter dem Plantitel gerendert.
 
 ---
@@ -191,7 +228,7 @@ Die **Plan-Notiz** (über dem Raster) wird wie bisher als Untertitel unter dem P
 1. Format: DIN A4 oder A5 (Querformat)
 2. Titel + Plan-Notiz eingeben
 3. „PDF erzeugen" → „PDF herunterladen"
-4. Eintrag-Notizen: sichtbar im Block (bei ausreichend hohem Termin) und zusätzlich als klickbare Sticky-Note-Icons
+4. Eintrag-Notizen: sichtbar im Block (bei ausreichend hohem Termin); im Klassisch-Modus **zusätzlich** als klickbare Sticky-Note-Icons, im Modern-Modus nur der Inline-Text
 5. Im farbigen Termin: **Startzeit** optional oben links; **Name und Notiz** darunter **oben** und **zeilenweise am Zeilenanfang** ausgerichtet (nicht vertikal zentriert), mit an die Blockhöhe angepassten Schriftgrößen (**Modern-PDF:** Stufen `xs`–`lg`)
 
 ### CSV-Export

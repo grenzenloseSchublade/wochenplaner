@@ -1,0 +1,63 @@
+/*
+ * Modern-PDF Themes – überschreibt Basis-Tokens aus tokens.css.
+ * Jede `.theme--*`-Klasse wird per <body class="... theme--X"> aktiviert.
+ * Default in tokens.css entspricht 'structured', wird hier trotzdem
+ * explizit gespiegelt, damit Theme-Wechsel deterministisch ist.
+ */
+
+.theme--minimal {
+  /* Ruhig, editorial. Keine Akzentfarben, kein Wochenend-Tint, keine Elevation. */
+  --md-header-accent-color: transparent;
+  --md-header-accent-width: 0;
+  --md-header-divider-color: var(--md-sys-color-outline);
+  --md-header-divider-width: 0.5pt;
+  --md-weekday-row-bg: var(--md-sys-color-surface);
+  --md-weekend-col-bg: transparent;
+  --md-weekday-col-bg: transparent;
+  --md-table-border-color: var(--md-sys-color-outline-variant);
+  --md-table-border-width: 0.4pt;
+  --md-table-shadow: none;
+  --md-axis-left-bg: transparent;
+  --md-axis-right-bg: transparent;
+  --md-axis-right-opacity: 0.5;
+  --md-gridline-quarter-visible: 0;
+  --md-footer-divider-color: transparent;
+}
+
+.theme--structured {
+  /* Moderner MD3-Look: Primärakzent, Wochenend-Tint, weiche Elevation. */
+  --md-header-accent-color: var(--md-sys-color-primary);
+  --md-header-accent-width: 1.5pt;
+  --md-header-divider-color: var(--md-sys-color-outline-variant);
+  --md-header-divider-width: 0;
+  --md-weekday-row-bg: var(--md-sys-color-surface-container-high);
+  --md-weekend-col-bg: var(--md-sys-color-surface-container);
+  --md-weekday-col-bg: transparent;
+  --md-table-border-color: var(--md-sys-color-outline-variant);
+  --md-table-border-width: 0.5pt;
+  --md-table-shadow: 0 1pt 2pt rgba(29, 27, 32, 0.08);
+  --md-axis-left-bg: var(--md-sys-color-surface-container-low);
+  --md-axis-right-bg: transparent;
+  --md-axis-right-opacity: 0.55;
+  --md-gridline-quarter-visible: 1;
+  --md-footer-divider-color: var(--md-sys-color-outline-variant);
+}
+
+.theme--balanced {
+  /* Schlicht-funktional: keine Primärlinie, aber Wochenend-Tint und klare Trennlinie. */
+  --md-header-accent-color: transparent;
+  --md-header-accent-width: 0;
+  --md-header-divider-color: var(--md-sys-color-outline);
+  --md-header-divider-width: 0.75pt;
+  --md-weekday-row-bg: var(--md-sys-color-surface-container);
+  --md-weekend-col-bg: var(--md-sys-color-surface-container);
+  --md-weekday-col-bg: transparent;
+  --md-table-border-color: var(--md-sys-color-outline);
+  --md-table-border-width: 0.5pt;
+  --md-table-shadow: none;
+  --md-axis-left-bg: var(--md-sys-color-surface-container-low);
+  --md-axis-right-bg: transparent;
+  --md-axis-right-opacity: 0.55;
+  --md-gridline-quarter-visible: 0;
+  --md-footer-divider-color: var(--md-sys-color-outline-variant);
+}

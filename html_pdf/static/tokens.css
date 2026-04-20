@@ -1,6 +1,7 @@
 :root {
   /* MD3-inspiriert: ruhige Oberflächen, eine Primärfarbe für Akzente */
   --md-sys-color-surface: #fdfcff;
+  --md-sys-color-surface-container-low: #f7f2fa;
   --md-sys-color-surface-container: #f3edf7;
   --md-sys-color-surface-container-high: #ece6f0;
   --md-sys-color-on-surface: #1d1b20;
@@ -10,17 +11,55 @@
   --md-sys-color-primary: #4a5fc7;
   --md-sys-color-on-primary: #ffffff;
   --md-sys-color-tertiary: #7d5268;
+
+  /* Typografie-Skala */
   --md-typescale-title-size: 12pt;
   --md-typescale-body-size: 7.5pt;
   --md-typescale-label-size: 5.25pt;
-  /* Wochentags-Leiste + Tagesspalten (Modern-PDF) */
   --md-typescale-weekday-size: 10pt;
-  --md-weekday-row-bg: var(--md-sys-color-surface-container-high);
-  --md-day-col-stripe-a: #ffffff;
-  --md-day-col-stripe-b: #f0ecf4;
+  --md-typescale-axis-size: 6.5pt;
+  --md-typescale-axis-secondary-size: 5.5pt;
+  --md-typescale-footer-size: 5.5pt;
+
+  /* Layout-Maße */
   --md-space-xs: 1mm;
   --md-space-sm: 2mm;
   --md-radius-sm: 4px;
   --md-radius-tile: 5px;
+  --md-grid-height-a4: 165mm;
+  --md-grid-height-a5: 118mm;
+
+  /* Wochentagsleiste + Tagesspalten (Basis – Themes überschreiben) */
+  --md-weekday-row-bg: var(--md-sys-color-surface-container-high);
+  --md-axis-bg: var(--md-sys-color-surface-container-low);
+  --md-day-col-stripe-a: transparent;
+  --md-day-col-stripe-b: transparent;
+
+  /* Theme-Hooks – Defaults entsprechen Variante 'structured' */
+  --md-header-accent-color: var(--md-sys-color-primary);
+  --md-header-accent-width: 1.5pt;
+  --md-header-divider-color: var(--md-sys-color-outline-variant);
+  --md-header-divider-width: 0.5pt;
+  --md-weekend-col-bg: var(--md-sys-color-surface-container);
+  --md-weekday-col-bg: transparent;
+  --md-table-border-color: var(--md-sys-color-outline-variant);
+  --md-table-border-width: 0.5pt;
+  --md-table-shadow: 0 1pt 2pt rgba(29, 27, 32, 0.08);
+  --md-axis-right-opacity: 0.6;
+  --md-axis-left-bg: var(--md-axis-bg);
+  --md-axis-right-bg: transparent;
+  --md-footer-divider-color: var(--md-sys-color-outline-variant);
+  --md-footer-divider-width: 0.35pt;
+
+  /* Raster-Linien: drei Stufen, per Theme (de)aktivierbar via -visible-Flag */
+  --md-gridline-hour: rgba(29, 27, 32, 0.18);
+  --md-gridline-half: rgba(29, 27, 32, 0.08);
+  --md-gridline-quarter: rgba(29, 27, 32, 0.04);
+  --md-gridline-quarter-visible: 1;
+
+  /* Tiles */
   --md-elevation-hairline: 0 0 0 0.35px rgba(29, 27, 32, 0.12);
+  --md-tile-border: rgba(29, 27, 32, 0.18);
+  --md-gridline-strong: rgba(29, 27, 32, 0.06);
+  --md-gridline-soft: rgba(29, 27, 32, 0.05);
 }

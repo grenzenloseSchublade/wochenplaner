@@ -700,6 +700,7 @@ def main() -> None:
         ("pdf_bytes", None),
         ("pdf_format", "DIN-A4"),
         ("pdf_export_style", "modern_html"),
+        ("pdf_style_theme", "structured"),
         ("custom_activities", None),
         ("activity_colors", None),
         ("lang", "de"),
@@ -953,6 +954,15 @@ def main() -> None:
             )
             st.caption(t("pdf_style_hint", lang))
             st.caption(t("pdf_modern_hosting_note", lang))
+            if st.session_state.get("pdf_export_style") == "modern_html":
+                st.radio(
+                    t("pdf_theme_label", lang),
+                    ["minimal", "structured", "balanced"],
+                    horizontal=True,
+                    key="pdf_style_theme",
+                    format_func=lambda th: t(f"pdf_theme_{th}", lang),
+                )
+                st.caption(t("pdf_theme_hint", lang))
             if st.button(
                 t("generate_pdf", lang),
                 width="stretch",
@@ -977,6 +987,9 @@ def main() -> None:
                             show_axis_times=show_axis_times,
                             show_block_times=show_block_times,
                             continuous_horizontal_grid=continuous_horizontal_grid,
+                            pdf_style_theme=st.session_state.get(
+                                "pdf_style_theme", "structured"
+                            ),
                         )
                         try:
                             if (
@@ -996,7 +1009,9 @@ def main() -> None:
                                 == "modern_html"
                                 else t("pdf_export_failed", lang)
                             )
-                            st.error(f"{_fail} ({exc!s})")
+                            st.error(_fail)
+                            with st.expander(t("pdf_error_details", lang)):
+                                st.code(f"{type(exc).__name__}: {exc!s}")
             if st.session_state.pdf_bytes is not None:
                 _slug = slugify(st.session_state.plan_title)
                 _fmt_slug = slugify(st.session_state.get("pdf_format", "DIN-A4"))

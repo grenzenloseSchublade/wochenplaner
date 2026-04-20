@@ -15,10 +15,28 @@ Abnahme-Checkliste für Release **1.5.0** und nachfolgende Modern-PDF-Updates. A
 - [ ] Plantitel und Plan-Notiz erscheinen wie im UI
 - [ ] Kurze und lange Blöcke: Titel/Notiz lesbar (Stufen-Typo), kein „Staub“ bei Notizen
 - [ ] A4 und A5 Quer: kein harter Umbruch mitten in der Kopfzeile (visuell)
+- [ ] Kalender als **eine** Tabelle lesbar: Wochentagsleiste und Raster teilen Rahmen/Border, keine sichtbare Fuge
+- [ ] Zeitachse links mit eigenem Hintergrund, Achsen-Zahlen lesbar (≥ 6pt)
+- [ ] A4: Achse rechts dezent vorhanden; A5: Achse rechts **ausgeblendet**, Raster nutzt die Breite
+- [ ] Raster-Linien: volle Stunde deutlich sichtbar, halbe Stunde schwächer; je nach Theme auch Viertelstunden
+
+### Themes (jeweils A4 + A5)
+
+| Theme | Erwartetes Kalender-Chrome |
+|-------|----------------------------|
+| **Minimal** | keine Primär-Akzentlinie, kein Wochenend-Tint, keine Card-Shadow; nur Typografie |
+| **Strukturiert** | Primary-Linie durchgehend unter der Wochentagsleiste; Wochenend-Spalten leicht getönt; weiche Card-Shadow |
+| **Ausgewogen** | keine Primary-Linie; Wochenend-Tint; klare `outline`-Trennlinie Header/Raster |
+
+- [ ] **Minimal**: A4 und A5 visuell geprüft
+- [ ] **Strukturiert**: A4 und A5 visuell geprüft
+- [ ] **Ausgewogen**: A4 und A5 visuell geprüft
 
 ## UI / i18n
 
 - [ ] Radio: Klassisch vs. Modern; Beschriftungen DE und EN plausibel
+- [ ] Bei „Modern" sichtbar: zweites Radio **PDF-Stil (Modern)** mit minimal/strukturiert/ausgewogen (Default: strukturiert)
+- [ ] Wechsel zwischen den drei Themes erzeugt unterschiedliche PDFs (manueller Sichtcheck)
 - [ ] Pro Klick wird nur **ein** Pfad ausgeführt (kein Doppel-Download ohne erneuten Klick)
 
 ## Abhängigkeiten / Umgebung

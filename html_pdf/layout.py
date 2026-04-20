@@ -10,6 +10,7 @@ from utils import (
     get_secondary_text_color,
     get_text_color,
     inline_note_fits_block_height,
+    validate_color,
 )
 
 
@@ -54,10 +55,13 @@ def build_week_template_vars(ctx: PdfExportContext) -> dict:
     # Pro Wochentag: Liste von Kacheln (top/height in % der Zeitskala)
     columns: list[dict] = []
     for day_idx, day_key in enumerate(WOCHENTAGE):
+        # Stabile Rendering-Reihenfolge: aufsteigend nach Startzeit,
+        # damit Overlaps deterministisch gestapelt werden.
+        day_acts = [a for a in ctx["activities"] if a.get("day") == day_key]
+        day_acts.sort(key=lambda a: str(a.get("start", "")))
+
         blocks: list[dict] = []
-        for act in ctx["activities"]:
-            if act.get("day") != day_key:
-                continue
+        for act in day_acts:
             try:
                 sh, sm = map(int, act["start"].split(":"))
                 eh, em = map(int, act["end"].split(":"))
@@ -80,7 +84,8 @@ def build_week_template_vars(ctx: PdfExportContext) -> dict:
             top_pct = 100.0 * offset_min / total_minutes
             h_pct = 100.0 * (e_clamped - s_clamped) / total_minutes
 
-            color_hex = act.get("color", "#F3E5AB")
+            # Farbe immer validieren (Fallback statt ValueError in get_text_color).
+            color_hex = validate_color(str(act.get("color", "") or ""))
             note_s = str(act.get("note", "") or "").strip()
             ht_px_equiv = float(dur_min) * PX_PER_MIN
             want_note = bool(note_s) and inline_note_fits_block_height(ht_px_equiv)
@@ -130,4 +135,5 @@ def build_week_template_vars(ctx: PdfExportContext) -> dict:
         "show_block_times": ctx["show_block_times"],
         "continuous_horizontal_grid": ctx["continuous_horizontal_grid"],
         "paper_format": ctx["paper_format"],
+        "pdf_style_theme": ctx.get("pdf_style_theme", "structured"),
     }

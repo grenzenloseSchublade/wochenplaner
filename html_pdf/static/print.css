@@ -1,14 +1,27 @@
+/*
+ * Hinweis: Im Modern-PDF-Export wird diese Datei NICHT direkt im Browser
+ * geladen. `html_pdf/render.py::_css_bundle_for_pdf()` konkateniert
+ * tokens.css + typography.css + print.css + themes.css und entfernt dabei
+ * die folgenden `@import`-Zeilen. Sie bleiben hier für Standalone-Preview/
+ * Dev-Tools-Experimente stehen.
+ */
 @import "tokens.css";
 @import "typography.css";
 
+/*
+ * Seitenformate: Margins werden in render.py (`page.pdf(margin=0)`)
+ * gesetzt – einzige Quelle der Wahrheit. Innenabstände kommen aus
+ * `.page` und den Grid-Klassen. `size` wird per
+ * `prefer_css_page_size=True` aus dieser CSS übernommen.
+ */
 @page {
   size: A4 landscape;
-  margin: 7mm 7mm 5mm 10mm;
+  margin: 0;
 }
 
 @page a5land {
   size: A5 landscape;
-  margin: 5mm 5mm 4mm 8mm;
+  margin: 0;
 }
 
 body.page--a5 {
@@ -36,6 +49,12 @@ body {
   padding: 0;
 }
 
+/* ---- Header ---- */
+
+.page-header {
+  padding: var(--md-space-sm) var(--md-space-sm) var(--md-space-xs);
+}
+
 .page-title {
   margin: 0 0 var(--md-space-xs) 0;
   text-align: center;
@@ -46,7 +65,7 @@ body {
 }
 
 .plan-note {
-  margin: 0 0 var(--md-space-sm) 0;
+  margin: 0;
   text-align: center;
   font-size: var(--md-typescale-body-size);
   font-weight: 400;
@@ -56,48 +75,84 @@ body {
   margin-right: auto;
 }
 
-/* Wochentags-Leiste: klar lesbar, optisch vom Raster getrennt */
+/* ---- Kalender-Tabelle als zusammenhängender Container ---- */
+
+.calendar-table {
+  margin: 0 var(--md-space-sm);
+  border: var(--md-table-border-width) solid var(--md-table-border-color);
+  border-radius: var(--md-radius-sm);
+  overflow: hidden;
+  box-shadow: var(--md-table-shadow);
+  background: var(--md-sys-color-surface);
+}
+
+/* ---- Wochentagsleiste ---- */
+
 .day-header-row {
   display: grid;
   grid-template-columns: 9mm repeat(7, 1fr) 9mm;
-  margin-bottom: 0;
   background: var(--md-weekday-row-bg);
-  border-radius: var(--md-radius-sm) var(--md-radius-sm) 0 0;
-  box-shadow: inset 0 -1px 0 0 var(--md-sys-color-outline-variant);
+  /* Trennlinie zum Raster + Primary-Akzent (über Theme-Token). */
+  border-bottom: var(--md-header-divider-width) solid
+    var(--md-header-divider-color);
+  box-shadow: inset 0 calc(-1 * var(--md-header-accent-width)) 0 0
+    var(--md-header-accent-color);
+}
+
+.corner-cell {
+  background: transparent;
+}
+
+.corner-cell--left {
+  background: var(--md-axis-left-bg);
+}
+
+.corner-cell--right {
+  background: var(--md-axis-right-bg);
 }
 
 .day-head {
   text-align: center;
-  padding: 2.8mm 1mm 2.2mm;
+  padding: 2.8mm 1mm 2.4mm;
   font-size: var(--md-typescale-weekday-size);
   font-weight: 700;
   letter-spacing: 0.03em;
   color: var(--md-sys-color-on-surface);
-  border-bottom: 3px solid var(--md-sys-color-primary);
   background: transparent;
 }
 
 .day-head--weekend {
-  border-bottom-color: var(--md-sys-color-tertiary);
   color: var(--md-sys-color-on-surface-variant);
   font-weight: 600;
 }
 
+/* ---- Raster ---- */
+
 .grid-wrap {
+  position: relative;
   display: grid;
   grid-template-columns: 9mm repeat(7, 1fr) 9mm;
   align-items: stretch;
   min-height: 0;
   background: var(--md-sys-color-surface);
-  border: 0.5px solid var(--md-sys-color-outline-variant);
-  border-top: none;
-  border-radius: 0 0 var(--md-radius-sm) var(--md-radius-sm);
 }
 
 .axis {
   position: relative;
-  font-size: var(--md-typescale-label-size);
+  font-size: var(--md-typescale-axis-size);
   color: var(--md-sys-color-on-surface-variant);
+}
+
+.axis-left {
+  background: var(--md-axis-left-bg);
+  border-right: 0.4pt solid var(--md-sys-color-outline-variant);
+}
+
+.axis-right {
+  background: var(--md-axis-right-bg);
+  border-left: 0.4pt solid var(--md-sys-color-outline-variant);
+  font-size: var(--md-typescale-axis-secondary-size);
+  opacity: var(--md-axis-right-opacity);
 }
 
 .axis-inner {
@@ -108,70 +163,92 @@ body {
   bottom: 0;
 }
 
-/* Innen zum Raster ausrichten (Zahlen am Gitter) */
 .axis-label {
   position: absolute;
   left: 0;
   right: 0;
   transform: translateY(-50%);
   text-align: right;
-  padding-right: 0.8mm;
+  padding-right: 1mm;
 }
 
-.axis--right .axis-label {
+.axis-right .axis-label {
   text-align: left;
   padding-right: 0;
-  padding-left: 0.8mm;
+  padding-left: 1mm;
 }
+
+/* ---- Tagesspalten ---- */
 
 .day-col {
   position: relative;
-  border-left: 0.55px solid var(--md-sys-color-outline);
+  border-left: 0.4pt solid var(--md-sys-color-outline-variant);
 }
 
-.day-col:last-of-type {
-  border-right: 0.55px solid var(--md-sys-color-outline);
+.day-col--week {
+  background: var(--md-weekday-col-bg);
 }
 
-.day-col--stripe-a .day-col-inner {
-  background: var(--md-day-col-stripe-a);
-}
-
-.day-col--stripe-b .day-col-inner {
-  background: var(--md-day-col-stripe-b);
+.day-col--weekend {
+  background: var(--md-weekend-col-bg);
 }
 
 .day-col-inner {
   position: relative;
   height: var(--grid-h, 150mm);
-  border-bottom: 0.5px solid var(--md-sys-color-outline);
 }
 
-.day-col-inner--lines {
-  background-image: linear-gradient(
-    to bottom,
-    rgba(29, 27, 32, 0.06) 0.35px,
-    transparent 0.35px
-  );
-  background-size: 100% calc(100% / var(--slot-count, 16));
-}
-
+/*
+ * Raster-Linien: drei Stufen als gestapelte Gradients.
+ * --md-gridline-quarter-visible (1/0) schaltet die feinste Stufe per Theme.
+ * Die älteren Klassen (--lines / --continuous) bleiben als Fallback
+ * in Orten, an denen der Raster-Hintergrund pro Spalte gewünscht ist.
+ */
+.day-col-inner--lines,
 .day-col-inner--continuous {
-  background-image: linear-gradient(
-    to bottom,
-    rgba(29, 27, 32, 0.05) 0.3px,
-    transparent 0.3px
-  );
-  background-size: 100% calc(100% / var(--half-slot-count, 32));
+  background-image:
+    linear-gradient(
+      to bottom,
+      var(--md-gridline-hour) 0.4px,
+      transparent 0.4px
+    ),
+    linear-gradient(
+      to bottom,
+      var(--md-gridline-half) 0.3px,
+      transparent 0.3px
+    ),
+    linear-gradient(
+      to bottom,
+      rgba(29, 27, 32, calc(0.04 * var(--md-gridline-quarter-visible))) 0.25px,
+      transparent 0.25px
+    );
+  background-repeat: repeat-y;
+  background-position: 0 0, 0 0, 0 0;
+  background-size:
+    100% calc(100% / var(--slot-count, 16)),
+    100% calc(100% / var(--half-slot-count, 32)),
+    100% calc(100% / (var(--slot-count, 16) * 4));
 }
 
-/* Kacheln: linksbündiger Fließtext */
+/* A5: rechte Achse + rechte Corner-Zelle ausblenden, Grid kompakter. */
+body.page--a5 .axis-right,
+body.page--a5 .corner-cell--right {
+  display: none;
+}
+
+body.page--a5 .day-header-row,
+body.page--a5 .grid-wrap {
+  grid-template-columns: 9mm repeat(7, 1fr);
+}
+
+/* ---- Kacheln: unverändert, Typo-Stufen xs..lg ---- */
+
 .tile {
   position: absolute;
   left: 1px;
   right: 1px;
   border-radius: var(--md-radius-tile);
-  border: 0.35px solid rgba(29, 27, 32, 0.18);
+  border: 0.35px solid var(--md-tile-border);
   box-shadow: var(--md-elevation-hairline);
   overflow: hidden;
   padding: 1px 3px 2px;
@@ -225,7 +302,6 @@ body {
   text-align: start;
 }
 
-/* Stufen: xs = sehr klein … lg = großzügig */
 .tile--xs .tile__title--single {
   font-size: 3.9pt;
 }
@@ -278,9 +354,14 @@ body {
   max-height: 5em;
 }
 
+/* ---- Footer ---- */
+
 .page-footer {
-  margin-top: var(--md-space-sm);
+  margin: var(--md-space-sm) var(--md-space-sm) 0;
+  padding-top: 1mm;
   text-align: center;
-  font-size: 5pt;
+  font-size: var(--md-typescale-footer-size);
   color: var(--md-sys-color-on-surface-variant);
+  border-top: var(--md-footer-divider-width) solid
+    var(--md-footer-divider-color);
 }

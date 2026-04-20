@@ -99,12 +99,22 @@ TRANSLATIONS: dict[Lang, dict[str, str]] = {
             "Modern: farbiges Wochenraster wie in der App (HTML/CSS)."
         ),
         "pdf_modern_hosting_note": (
-            "Modern-PDF benötigt auf dem Server Chromium (Playwright). "
-            "Auf **Streamlit Community Cloud** ist das meist **nicht** installiert – dann **Klassisch** wählen "
-            "oder die App lokal / auf einem eigenen Server mit `playwright install chromium` nutzen."
+            "Hinweis: Modern-PDF braucht auf dem Server einen Browser (Chromium). "
+            "**Auf Streamlit Community Cloud funktioniert Modern-PDF in der Regel nicht** – dort bitte **Klassisch** wählen. "
+            "Lokal oder self-hosted: siehe README."
+        ),
+        "pdf_theme_label": "PDF-Stil (Modern)",
+        "pdf_theme_minimal": "Minimal",
+        "pdf_theme_structured": "Strukturiert",
+        "pdf_theme_balanced": "Ausgewogen",
+        "pdf_theme_hint": (
+            "Minimal: ruhig, nur Typografie-Hierarchie. "
+            "Strukturiert: Primärlinie unter der Wochentagsleiste, Wochenend-Tint, weiche Card-Umrandung (Standard). "
+            "Ausgewogen: Wochenend-Tint, klare Trennlinie ohne Akzentfarbe."
         ),
         "pdf_modern_failed": "Modern-PDF konnte nicht erzeugt werden.",
         "pdf_export_failed": "PDF konnte nicht erzeugt werden.",
+        "pdf_error_details": "Technische Details",
         # File management
         "file_mgmt": "Dateiverwaltung",
         "import_json": "JSON importieren",
@@ -214,12 +224,22 @@ TRANSLATIONS: dict[Lang, dict[str, str]] = {
             "Modern: colored week grid like the app (HTML/CSS)."
         ),
         "pdf_modern_hosting_note": (
-            "Modern PDF needs Chromium on the server (Playwright). "
-            "**Streamlit Community Cloud** usually does **not** include it—choose **Classic**, "
-            "or run the app locally / self-hosted with `playwright install chromium`."
+            "Note: Modern PDF needs a server-side browser (Chromium). "
+            "**On Streamlit Community Cloud, Modern PDF usually does not work** — please choose **Classic** there. "
+            "Local or self-hosted: see README."
+        ),
+        "pdf_theme_label": "PDF style (Modern)",
+        "pdf_theme_minimal": "Minimal",
+        "pdf_theme_structured": "Structured",
+        "pdf_theme_balanced": "Balanced",
+        "pdf_theme_hint": (
+            "Minimal: quiet, typography-only hierarchy. "
+            "Structured: primary accent line under the weekday row, weekend tint, soft card outline (default). "
+            "Balanced: weekend tint, clear divider without accent color."
         ),
         "pdf_modern_failed": "Could not generate modern PDF.",
         "pdf_export_failed": "Could not generate PDF.",
+        "pdf_error_details": "Technical details",
         # File management
         "file_mgmt": "File management",
         "import_json": "Import JSON",

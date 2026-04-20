@@ -4,10 +4,13 @@ Eine Quelle der Wahrheit – vermeidet Drift zwischen den Renderern.
 """
 
 from collections.abc import Sequence
-from typing import TypedDict
+from typing import Literal, TypedDict
 
 from i18n import Lang
 from utils import Activity
+
+PdfStyleTheme = Literal["minimal", "structured", "balanced"]
+DEFAULT_PDF_STYLE_THEME: PdfStyleTheme = "structured"
 
 
 class PdfExportContext(TypedDict):
@@ -23,6 +26,8 @@ class PdfExportContext(TypedDict):
     show_axis_times: bool
     show_block_times: bool
     continuous_horizontal_grid: bool
+    # Nur Modern-PDF: visuelle Variante des Kalender-Chromes.
+    pdf_style_theme: PdfStyleTheme
 
 
 def build_pdf_context(
@@ -37,6 +42,7 @@ def build_pdf_context(
     show_axis_times: bool = True,
     show_block_times: bool = True,
     continuous_horizontal_grid: bool = False,
+    pdf_style_theme: PdfStyleTheme = DEFAULT_PDF_STYLE_THEME,
 ) -> PdfExportContext:
     """Baut den Export-Context aus denselben Parametern wie bisher `generate_pdf`."""
     return PdfExportContext(
@@ -50,4 +56,5 @@ def build_pdf_context(
         show_axis_times=show_axis_times,
         show_block_times=show_block_times,
         continuous_horizontal_grid=continuous_horizontal_grid,
+        pdf_style_theme=pdf_style_theme,
     )
