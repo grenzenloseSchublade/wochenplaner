@@ -18,6 +18,8 @@ Ab **v1.5.0** gibt es **zwei PDF-Modi** in der Sidebar unter „PDF erzeugen“:
 | **Klassisch** | ReportLab (wie bisher) | PDF-Text-Annotations für Eintrag-Notizen, kein Extra-Setup |
 | **Modern (HTML)** | Jinja2 + CSS + **Playwright** (headless Chromium) | Material-Design-ähnliches Layout, Schrift **Roboto** (WOFF2, [Apache-2.0](https://www.apache.org/licenses/LICENSE-2.0.html), Dateien via [@fontsource-Quellen](https://www.npmjs.com/package/@fontsource/roboto)). |
 
+**Standard-Einstellungen:** PDF-Export **Klassisch**, Option **Zeitlinien über Terminen** (horizontales Raster) **ein**, bei Modern-PDF der Stil **Ausgewogen**.
+
 **Modern-PDF:** nach `uv sync` einmal `uv run playwright install chromium`. Unter Linux braucht Chromium typisch Systembibliotheken (z. B. `libatk`, `libgbm` – im **Devcontainer** sind sie im `Dockerfile` und `post-create.sh` abgedeckt).
 
 **Modern-PDF: drei wählbare Stile** (Sidebar → „PDF-Stil (Modern)"):
@@ -25,8 +27,8 @@ Ab **v1.5.0** gibt es **zwei PDF-Modi** in der Sidebar unter „PDF erzeugen“:
 | Stil | Charakter |
 |------|-----------|
 | **Minimal** | ruhig, editorial; keine Akzentfarben, keine Flächen – nur Typografie- und Linien-Hierarchie |
-| **Strukturiert** *(Standard)* | dezenter Primär-Akzent unter der Wochentagsleiste, Wochenend-Spalten leicht getönt, weiche Card-Umrandung |
-| **Ausgewogen** | Wochenend-Tint + klare Trennlinie Header/Raster, ohne Akzentfarbe |
+| **Strukturiert** | dezenter Primär-Akzent unter der Wochentagsleiste, Wochenend-Spalten leicht getönt, weiche Card-Umrandung |
+| **Ausgewogen** *(Standard)* | Wochenend-Tint + klare Trennlinie Header/Raster, ohne Akzentfarbe |
 
 Die Zeitachse ist **links prominent** mit eigenem Hintergrund, **rechts leise** als Zweitorientierung (auf A4); bei **A5 wird die rechte Achse ausgeblendet**, um mehr Platz für die Blöcke zu gewinnen.
 

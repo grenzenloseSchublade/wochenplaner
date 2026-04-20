@@ -10,7 +10,7 @@ from i18n import Lang
 from utils import Activity
 
 PdfStyleTheme = Literal["minimal", "structured", "balanced"]
-DEFAULT_PDF_STYLE_THEME: PdfStyleTheme = "structured"
+DEFAULT_PDF_STYLE_THEME: PdfStyleTheme = "balanced"
 
 
 class PdfExportContext(TypedDict):
@@ -41,7 +41,7 @@ def build_pdf_context(
     plan_note: str = "",
     show_axis_times: bool = True,
     show_block_times: bool = True,
-    continuous_horizontal_grid: bool = False,
+    continuous_horizontal_grid: bool = True,
     pdf_style_theme: PdfStyleTheme = DEFAULT_PDF_STYLE_THEME,
 ) -> PdfExportContext:
     """Baut den Export-Context aus denselben Parametern wie bisher `generate_pdf`."""

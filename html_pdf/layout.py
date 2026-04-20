@@ -32,6 +32,18 @@ def _size_tier(dur_min: int, h_pct: float) -> str:
     return "lg"
 
 
+# Mindestdauer, ab der die Startzeit in der Tile-Ecke („Corner") gerendert wird.
+#
+# Herleitung: In sm-Tier (sm = 6 pt Titel × 1.18 lh ≈ 7.1 pt + 5.4 pt Corner
+# × 1.1 lh ≈ 5.95 pt + 0.5 px Margin = ~13 pt Inhalt). Tile-Innenhöhe =
+# h_pct × 152 mm − (Padding 3.4 pt + Border). Damit Corner + 1-zeiliger Titel
+# nebeneinander passen, braucht es ~14 pt Innenhöhe → ~40 min auf 16h-Range.
+# Bei kürzeren Blöcken verdrängt die Ecke den Titel (Bsp.: 30 min
+# Sprachtraining klemmte bei 12 min-Schwelle).
+# Die Startzeit steht ohnehin links auf der Zeitachse – kein Infoverlust.
+MIN_MINUTES_FOR_CORNER = 40
+
+
 def build_week_template_vars(ctx: PdfExportContext) -> dict:
     """Kontext + berechnete Kachel-Positionen für Jinja2."""
     start_hour = ctx["start_hour"]
@@ -104,7 +116,10 @@ def build_week_template_vars(ctx: PdfExportContext) -> dict:
                     "height_pct": round(h_pct, 4),
                     "dur_min": dur_min,
                     "show_name": dur_min >= MIN_MINUTES_FOR_NAME,
-                    "show_corner": ctx["show_block_times"] and dur_min >= 12,
+                    "show_corner": (
+                        ctx["show_block_times"]
+                        and dur_min >= MIN_MINUTES_FOR_CORNER
+                    ),
                     "size_tier": tier,
                 }
             )
@@ -135,5 +150,5 @@ def build_week_template_vars(ctx: PdfExportContext) -> dict:
         "show_block_times": ctx["show_block_times"],
         "continuous_horizontal_grid": ctx["continuous_horizontal_grid"],
         "paper_format": ctx["paper_format"],
-        "pdf_style_theme": ctx.get("pdf_style_theme", "structured"),
+        "pdf_style_theme": ctx.get("pdf_style_theme", "balanced"),
     }

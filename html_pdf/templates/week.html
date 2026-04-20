@@ -9,7 +9,7 @@
   class="page theme--{{ pdf_style_theme }} {% if paper_format == 'A5' %}page--a5{% endif %}"
   style="--slot-count: {{ slot_count }}; --half-slot-count: {{ half_slot_count }}; --grid-h: {% if paper_format == 'A5' %}var(--md-grid-height-a5){% else %}var(--md-grid-height-a4){% endif %};"
 >
-  <div class="page">
+  <div class="sheet">
     <header class="page-header">
       <h1 class="page-title">{{ title }}</h1>
       {% if has_plan_note %}
@@ -29,6 +29,7 @@
       </div>
 
       <div class="grid-wrap">
+        <div class="grid-bands" aria-hidden="true"></div>
         <div class="axis axis-left">
           {% if show_axis_times %}
           <div class="axis-inner">
@@ -49,6 +50,7 @@
             {% for b in col.blocks %}
               {% include "partials/activity_tile.html" %}
             {% endfor %}
+            <div class="day-col-overlay" aria-hidden="true"></div>
           </div>
         </div>
         {% endfor %}

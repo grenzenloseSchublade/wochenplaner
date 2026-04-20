@@ -11,14 +11,22 @@ Abnahme-Checkliste für Release **1.5.0** und nachfolgende Modern-PDF-Updates. A
 ## Pfad B – Modern (HTML, Playwright / Chromium)
 
 - [ ] PDF erzeugen; Datei beginnt mit `%PDF`
+- [ ] **Einseitigkeit**: A4 und A5, jeweils mit und ohne Plan-Notiz, ergeben genau **eine** Seite
+- [ ] Sichtbarer Druckrand rundum (A4 ~6/7 mm, A5 ~3/4 mm) – Kalender klebt nicht am Papierrand
 - [ ] Typografie wirkt einheitlich (Roboto); keine fehlenden Glyphen (DE/EN)
+- [ ] Titel ≥ 14 pt, deutlich als Überschrift erkennbar; Plan-Notiz ≤ 7 pt, zentriert
 - [ ] Plantitel und Plan-Notiz erscheinen wie im UI
 - [ ] Kurze und lange Blöcke: Titel/Notiz lesbar (Stufen-Typo), kein „Staub“ bei Notizen
+- [ ] **Textgrößen** in Blöcken deutlich lesbar: xs ~4.6pt, sm-Titel ~6pt, md-Titel ~7pt, lg-Titel ~8.2pt (Titel klar erkennbar in allen Größen)
+- [ ] Großer Block (z.B. „Arbeit" 09–17 Uhr): Titel sichtbar nahe am oberen Rand, Notiz darunter, nichts abgeschnitten
 - [ ] A4 und A5 Quer: kein harter Umbruch mitten in der Kopfzeile (visuell)
 - [ ] Kalender als **eine** Tabelle lesbar: Wochentagsleiste und Raster teilen Rahmen/Border, keine sichtbare Fuge
 - [ ] Zeitachse links mit eigenem Hintergrund, Achsen-Zahlen lesbar (≥ 6pt)
 - [ ] A4: Achse rechts dezent vorhanden; A5: Achse rechts **ausgeblendet**, Raster nutzt die Breite
 - [ ] Raster-Linien: volle Stunde deutlich sichtbar, halbe Stunde schwächer; je nach Theme auch Viertelstunden
+- [ ] **Raster-Linien laufen auch über farbige Blöcke durch** (Overlay-Layer): durchgehend an gleicher Position, nicht von Kacheln verdeckt
+- [ ] **Stunden-Bänder** (structured/balanced): jede zweite Stunde minimal getönt über volle Raster-Breite (inkl. Achsen); Blockfarben bleiben erkennbar. Minimal-Theme: **keine** Bänder (bewusst ruhig).
+- [ ] Startzeit-Ecke in Kacheln: erscheint **nur** ab ~40 min Blockdauer (kürzere Blöcke zeigen nur den Titel, damit nichts klemmt)
 
 ### Themes (jeweils A4 + A5)
 
@@ -35,7 +43,7 @@ Abnahme-Checkliste für Release **1.5.0** und nachfolgende Modern-PDF-Updates. A
 ## UI / i18n
 
 - [ ] Radio: Klassisch vs. Modern; Beschriftungen DE und EN plausibel
-- [ ] Bei „Modern" sichtbar: zweites Radio **PDF-Stil (Modern)** mit minimal/strukturiert/ausgewogen (Default: strukturiert)
+- [ ] Bei „Modern" sichtbar: zweites Radio **PDF-Stil (Modern)** mit minimal/strukturiert/ausgewogen (Default: ausgewogen)
 - [ ] Wechsel zwischen den drei Themes erzeugt unterschiedliche PDFs (manueller Sichtcheck)
 - [ ] Pro Klick wird nur **ein** Pfad ausgeführt (kein Doppel-Download ohne erneuten Klick)
 

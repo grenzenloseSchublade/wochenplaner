@@ -121,9 +121,9 @@ class TestPdfThemeWhitelist(unittest.TestCase):
         with self.assertRaises(ValueError):
             _normalize_pdf_theme("")
 
-    def test_default_is_structured(self) -> None:
-        self.assertEqual(DEFAULT_PDF_THEME, "structured")
-        self.assertEqual(DEFAULT_PDF_STYLE_THEME, "structured")
+    def test_default_is_balanced(self) -> None:
+        self.assertEqual(DEFAULT_PDF_THEME, "balanced")
+        self.assertEqual(DEFAULT_PDF_STYLE_THEME, "balanced")
 
 
 class TestThemeRendering(unittest.TestCase):
@@ -165,7 +165,137 @@ class TestThemeRendering(unittest.TestCase):
 
     def test_default_theme_in_context(self) -> None:
         ctx = build_pdf_context([], paper_format="A5")
-        self.assertEqual(ctx["pdf_style_theme"], "structured")
+        self.assertEqual(ctx["pdf_style_theme"], "balanced")
+
+
+class TestCornerThreshold(unittest.TestCase):
+    """
+    `show_corner` darf bei kurzen Blöcken nicht gesetzt sein, sonst kollidieren
+    Startzeit und Titel (Bsp.: 30 min „Sprachtraining" klemmte).
+    Schwelle: MIN_MINUTES_FOR_CORNER (= 40) in html_pdf.layout.
+    """
+
+    def _blocks(self, minutes: int, show_times: bool = True) -> list[dict]:
+        # Start um 09:00, Länge in Minuten
+        start = "09:00"
+        s_min = 9 * 60
+        e_min = s_min + minutes
+        end = f"{e_min // 60:02d}:{e_min % 60:02d}"
+        ctx = build_pdf_context(
+            [
+                {
+                    "id": "x",
+                    "name": "Sprachtraining",
+                    "day": "Montag",
+                    "start": start,
+                    "end": end,
+                    "color": "#F3E5AB",
+                },
+            ],
+            paper_format="A4",
+            start_hour=6,
+            end_hour=22,
+            title="T",
+            lang="de",
+            show_block_times=show_times,
+        )
+        vars_ = build_week_template_vars(ctx)
+        cols = vars_["columns"]
+        return cols[0]["blocks"]
+
+    def test_30min_block_hides_corner(self) -> None:
+        blocks = self._blocks(30)
+        self.assertEqual(len(blocks), 1)
+        self.assertFalse(
+            blocks[0]["show_corner"],
+            "30-min-Block darf keine Startzeit-Ecke anzeigen "
+            "(würde mit Titel kollidieren).",
+        )
+        self.assertTrue(blocks[0]["show_name"])
+
+    def test_40min_block_shows_corner(self) -> None:
+        blocks = self._blocks(40)
+        self.assertTrue(blocks[0]["show_corner"])
+
+    def test_60min_block_shows_corner(self) -> None:
+        blocks = self._blocks(60)
+        self.assertTrue(blocks[0]["show_corner"])
+
+    def test_show_block_times_off_hides_corner(self) -> None:
+        blocks = self._blocks(120, show_times=False)
+        self.assertFalse(blocks[0]["show_corner"])
+
+
+class TestGridBands(unittest.TestCase):
+    """Stunden-Bänder über volle Raster-Breite."""
+
+    def _ctx(self) -> dict:
+        return build_pdf_context(
+            [],
+            paper_format="A4",
+            start_hour=6,
+            end_hour=22,
+            title="T",
+            lang="de",
+            pdf_style_theme="structured",
+        )
+
+    def test_grid_bands_div_rendered_once(self) -> None:
+        html = build_week_html(self._ctx())
+        # Genau ein Bänder-Overlay (auf .grid-wrap, volle Breite).
+        self.assertEqual(html.count('class="grid-bands"'), 1)
+
+    def test_grid_bands_tokens_in_css(self) -> None:
+        from html_pdf.render import _css_bundle_for_pdf
+
+        css = _css_bundle_for_pdf()
+        self.assertIn("--md-grid-band-strength", css)
+        self.assertIn("--md-grid-band-visible", css)
+        self.assertIn(".grid-bands", css)
+        # minimal schaltet Bänder aus
+        self.assertIn("--md-grid-band-visible: 0", css)
+
+
+class TestGridLinesOverlay(unittest.TestCase):
+    """Overlay-Div zeichnet Rasterlinien über die Kacheln (sonst verdeckt)."""
+
+    def _ctx(self) -> dict:
+        return build_pdf_context(
+            [
+                {
+                    "id": "a",
+                    "name": "Arbeit",
+                    "day": "Montag",
+                    "start": "09:00",
+                    "end": "17:00",
+                    "color": "#BFD7FF",
+                },
+            ],
+            paper_format="A4",
+            start_hour=6,
+            end_hour=22,
+            title="T",
+            lang="de",
+        )
+
+    def test_overlay_div_per_day_column(self) -> None:
+        html = build_week_html(self._ctx())
+        # Ein Overlay-Div pro Tag (7 Tage).
+        self.assertEqual(html.count('class="day-col-overlay"'), 7)
+        # aria-hidden, damit PDF-Screenreader/Tools es ignorieren.
+        self.assertIn('aria-hidden="true"', html)
+
+    def test_overlay_tokens_in_css_bundle(self) -> None:
+        """Overlay-spezifische Tokens müssen im gebundelten CSS verfügbar sein."""
+        from html_pdf.render import _css_bundle_for_pdf
+
+        css = _css_bundle_for_pdf()
+        self.assertIn("--md-gridline-hour-overlay", css)
+        self.assertIn("--md-gridline-half-overlay", css)
+        self.assertIn(".day-col-overlay", css)
+        # Jedes Theme definiert eigene Overlay-Werte.
+        for theme in ("minimal", "structured", "balanced"):
+            self.assertIn(f".theme--{theme}", css)
 
 
 if __name__ == "__main__":

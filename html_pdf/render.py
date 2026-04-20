@@ -18,7 +18,7 @@ _STATIC = _PKG / "static"
 
 ALLOWED_PAPER_FORMATS: frozenset[str] = frozenset({"A4", "A5"})
 ALLOWED_PDF_THEMES: frozenset[str] = frozenset({"minimal", "structured", "balanced"})
-DEFAULT_PDF_THEME = "structured"
+DEFAULT_PDF_THEME = "balanced"
 
 _CHROMIUM_MISSING_MSG = (
     "Chromium für Playwright wurde nicht gefunden. "
@@ -82,8 +82,33 @@ def _normalize_pdf_theme(theme: str) -> str:
     return val
 
 
+"""
+Papierformate in Millimeter (quer / landscape). Werden genutzt, um den
+Browser-Viewport exakt auf die spätere Druckseite zu setzen – sonst
+layoutet Chromium in seinem Default-Viewport (1280×720 px ≈ 338×190 mm),
+und `100vh`/`prefer_css_page_size=True` geraten auseinander → mehrseitige
+Exporte trotz passender CSS-Maße.
+"""
+_PAPER_MM_LANDSCAPE: dict[str, tuple[float, float]] = {
+    "A4": (297.0, 210.0),
+    "A5": (210.0, 148.0),
+}
+_MM_PER_INCH: float = 25.4
+_BROWSER_DPI: float = 96.0
+
+
+def _viewport_px_for(paper_format: str) -> dict[str, int]:
+    """Viewport-Größe (CSS-Pixel @ 96dpi) für `landscape=True` Ausgabe."""
+    w_mm, h_mm = _PAPER_MM_LANDSCAPE[paper_format]
+    return {
+        "width": round(w_mm * _BROWSER_DPI / _MM_PER_INCH),
+        "height": round(h_mm * _BROWSER_DPI / _MM_PER_INCH),
+    }
+
+
 def _pdf_playwright(html: str, paper_format: str) -> bytes:
     paper_size = _normalize_paper_format(paper_format)
+    viewport = _viewport_px_for(paper_size)
     with sync_playwright() as p:
         # Preflight: Chromium-Start. Schlägt mit klarer Meldung fehl,
         # wenn das Browser-Binary nicht installiert ist (häufig auf
@@ -94,7 +119,10 @@ def _pdf_playwright(html: str, paper_format: str) -> bytes:
             raise RuntimeError(_CHROMIUM_MISSING_MSG) from exc
 
         try:
-            page = browser.new_page()
+            # Viewport auf Page-Size → `100vh`, `min-height: 100vh` und
+            # `.page`-Padding rechnen in exakt derselben Geometrie, die
+            # später als PDF-Seite ausgegeben wird.
+            page = browser.new_page(viewport=viewport)
             page.set_content(html, wait_until="load")
             page.evaluate("() => document.fonts.ready")
             # Margins werden ausschließlich in print.css (@page) definiert;

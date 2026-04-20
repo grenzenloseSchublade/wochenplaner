@@ -725,8 +725,9 @@ def main() -> None:
         ("plan_note", ""),
         ("pdf_bytes", None),
         ("pdf_format", "DIN-A4"),
-        ("pdf_export_style", "modern_html"),
-        ("pdf_style_theme", "structured"),
+        ("pdf_export_style", "classic"),
+        ("pdf_style_theme", "balanced"),
+        ("pdf_continuous_hgrid", True),
         ("custom_activities", None),
         ("activity_colors", None),
         ("lang", "de"),
@@ -963,7 +964,7 @@ def main() -> None:
             )
             continuous_horizontal_grid = st.checkbox(
                 t("pdf_continuous_hgrid", lang),
-                value=False,
+                value=True,
                 key="pdf_continuous_hgrid",
                 help=t("pdf_continuous_hgrid_help", lang),
             )
@@ -1014,7 +1015,7 @@ def main() -> None:
                             show_block_times=show_block_times,
                             continuous_horizontal_grid=continuous_horizontal_grid,
                             pdf_style_theme=st.session_state.get(
-                                "pdf_style_theme", "structured"
+                                "pdf_style_theme", "balanced"
                             ),
                         )
                         try:

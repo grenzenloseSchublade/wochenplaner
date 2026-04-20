@@ -13,8 +13,8 @@
   --md-sys-color-tertiary: #7d5268;
 
   /* Typografie-Skala */
-  --md-typescale-title-size: 12pt;
-  --md-typescale-body-size: 7.5pt;
+  --md-typescale-title-size: 14pt;
+  --md-typescale-body-size: 7pt;
   --md-typescale-label-size: 5.25pt;
   --md-typescale-weekday-size: 10pt;
   --md-typescale-axis-size: 6.5pt;
@@ -24,10 +24,29 @@
   /* Layout-Maße */
   --md-space-xs: 1mm;
   --md-space-sm: 2mm;
+  --md-space-md: 3mm;
   --md-radius-sm: 4px;
   --md-radius-tile: 5px;
-  --md-grid-height-a4: 165mm;
-  --md-grid-height-a5: 118mm;
+
+  /*
+   * Seitenränder (echte Druckränder). Werden auf `.page` als padding
+   * appliziert. Werte so gewählt, dass typische Haushalts-/Büro-Drucker
+   * nichts abschneiden (meist ~3–5mm Hardware-Margin).
+   */
+  --md-page-margin-v: 6mm;
+  --md-page-margin-h: 7mm;
+  --md-page-margin-v-a5: 3mm;
+  --md-page-margin-h-a5: 4mm;
+
+  /*
+   * Grid-Höhen: bewusst konservativ, damit Header (inkl. Plan-Notiz)
+   * und Footer immer Luft haben und die Seite nicht randlos wirkt.
+   * Rechnung A4 quer (210mm): 6 + 9 + 3 + 7 + 152 + 4 + 4 + 6 ≈ 191mm
+   * → ~19mm Puffer. A5 quer (148mm): 3 + 8 + 2 + 6 + 117 + 3 + 3 + 3 ≈ 145mm
+   * → ~3mm Puffer (bewusst eng, damit Raster dennoch nutzbar bleibt).
+   */
+  --md-grid-height-a4: 152mm;
+  --md-grid-height-a5: 117mm;
 
   /* Wochentagsleiste + Tagesspalten (Basis – Themes überschreiben) */
   --md-weekday-row-bg: var(--md-sys-color-surface-container-high);
@@ -56,6 +75,24 @@
   --md-gridline-half: rgba(29, 27, 32, 0.08);
   --md-gridline-quarter: rgba(29, 27, 32, 0.04);
   --md-gridline-quarter-visible: 1;
+
+  /*
+   * Overlay-Varianten derselben Linien: liegen über den farbigen Kacheln.
+   * Leicht stärker gewählt als die Hintergrund-Linien, weil sonst auf
+   * pastelligen Tile-Farben kaum noch sichtbar.
+   */
+  --md-gridline-hour-overlay: rgba(29, 27, 32, 0.28);
+  --md-gridline-half-overlay: rgba(29, 27, 32, 0.12);
+
+  /*
+   * Stunden-Bänder (`.grid-bands`) über volle Breite: ungerade Stunden
+   * bekommen einen minimalen Schwarz-Tint (mix-blend-mode: multiply).
+   * `--md-grid-band-strength`  = Alpha pro Theme (0 = kein Band)
+   * `--md-grid-band-visible`   = Schalter (1/0), erlaubt themes komplett
+   *                              abzuschalten, ohne den Alpha-Wert zu ändern.
+   */
+  --md-grid-band-strength: 0.035;
+  --md-grid-band-visible: 1;
 
   /* Tiles */
   --md-elevation-hairline: 0 0 0 0.35px rgba(29, 27, 32, 0.12);

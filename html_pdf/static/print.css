@@ -43,16 +43,24 @@ body {
   print-color-adjust: exact;
 }
 
-.page {
+/*
+ * Seiten-Container (`<div class="sheet">`). Das `padding` bildet den
+ * eigentlichen Druckrand (Passepartout). Calendar/Header/Footer haben
+ * daher keine eigenen horizontalen Margins mehr.
+ * Wichtig: der `<body>` trägt die Klasse `page theme--…`, wird hier
+ * aber nicht mehr layoutet – sonst doppeltes Padding + verschachteltes
+ * `100vh` → zweiseitige PDFs.
+ */
+.sheet {
   width: 100%;
   min-height: 100vh;
-  padding: 0;
+  padding: var(--md-page-margin-v) var(--md-page-margin-h);
 }
 
 /* ---- Header ---- */
 
 .page-header {
-  padding: var(--md-space-sm) var(--md-space-sm) var(--md-space-xs);
+  padding: 0 0 var(--md-space-md);
 }
 
 .page-title {
@@ -65,20 +73,20 @@ body {
 }
 
 .plan-note {
-  margin: 0;
+  margin: 0 auto;
   text-align: center;
   font-size: var(--md-typescale-body-size);
   font-weight: 400;
   color: var(--md-sys-color-on-surface-variant);
-  max-width: 95%;
-  margin-left: auto;
-  margin-right: auto;
+  max-width: 90%;
+  line-height: 1.3;
 }
 
 /* ---- Kalender-Tabelle als zusammenhängender Container ---- */
 
 .calendar-table {
-  margin: 0 var(--md-space-sm);
+  /* Horizontale Ränder kommen über `.page` padding. */
+  margin: 0;
   border: var(--md-table-border-width) solid var(--md-table-border-color);
   border-radius: var(--md-radius-sm);
   overflow: hidden;
@@ -113,7 +121,7 @@ body {
 
 .day-head {
   text-align: center;
-  padding: 2.8mm 1mm 2.4mm;
+  padding: 2.2mm 1mm 2mm;
   font-size: var(--md-typescale-weekday-size);
   font-weight: 700;
   letter-spacing: 0.03em;
@@ -135,6 +143,39 @@ body {
   align-items: stretch;
   min-height: 0;
   background: var(--md-sys-color-surface);
+}
+
+/*
+ * Stunden-Bänder über die volle Raster-Breite (inkl. beider Zeitachsen).
+ * Jede zweite Stunde wird minimal getönt → gibt dem Plan eine visuelle
+ * „Stunden-Rhythmik", auch auf farbigen Blöcken (mix-blend-mode: multiply).
+ * Die Block-Farben bleiben dabei erkennbar, weil der Tint-Alpha niedrig
+ * ist (≤ 4 %). In A4 quer reicht das aus, um beim Durchblättern den
+ * Zeitverlauf sofort zu erfassen.
+ *
+ * Geometrie: 1 Stunde entspricht `100% / var(--slot-count)` der Höhe
+ * (slot_count = end_hour − start_hour, z.B. 16 bei 6–22 Uhr).
+ * Ein Band-Zyklus ist 2 Stunden lang → `200% / var(--slot-count)`.
+ */
+.grid-bands {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 3;
+  mix-blend-mode: multiply;
+  background-image: repeating-linear-gradient(
+    to bottom,
+    transparent 0,
+    transparent calc(100% / var(--slot-count, 16)),
+    rgba(
+      29, 27, 32,
+      calc(var(--md-grid-band-strength) * var(--md-grid-band-visible))
+    ) calc(100% / var(--slot-count, 16)),
+    rgba(
+      29, 27, 32,
+      calc(var(--md-grid-band-strength) * var(--md-grid-band-visible))
+    ) calc(200% / var(--slot-count, 16))
+  );
 }
 
 .axis {
@@ -201,8 +242,11 @@ body {
 /*
  * Raster-Linien: drei Stufen als gestapelte Gradients.
  * --md-gridline-quarter-visible (1/0) schaltet die feinste Stufe per Theme.
- * Die älteren Klassen (--lines / --continuous) bleiben als Fallback
- * in Orten, an denen der Raster-Hintergrund pro Spalte gewünscht ist.
+ * Die Linien liegen zusätzlich im Overlay (`.day-col-overlay`) über den
+ * Kacheln, damit sie auch über farbige Blöcke durchgezeichnet werden.
+ * Auf `.day-col-inner--lines/--continuous` bleibt der gleiche Gradient als
+ * Hintergrund für Bereiche ohne Kacheln – so wirken die Linien bei leeren
+ * Spalten identisch und im Overlay wird nichts „doppelt" dunkler.
  */
 .day-col-inner--lines,
 .day-col-inner--continuous {
@@ -220,6 +264,46 @@ body {
     linear-gradient(
       to bottom,
       rgba(29, 27, 32, calc(0.04 * var(--md-gridline-quarter-visible))) 0.25px,
+      transparent 0.25px
+    );
+  background-repeat: repeat-y;
+  background-position: 0 0, 0 0, 0 0;
+  background-size:
+    100% calc(100% / var(--slot-count, 16)),
+    100% calc(100% / var(--half-slot-count, 32)),
+    100% calc(100% / (var(--slot-count, 16) * 4));
+}
+
+/*
+ * Overlay-Layer: identische Gradients wie die Spalten-Hintergründe, aber
+ * über den Kacheln platziert. Eigene Token (--md-gridline-*-overlay) steuern
+ * die Opazität separat, weil auf farbigen Flächen etwas mehr Kontrast
+ * nötig ist als auf dem weißen Spalten-Hintergrund.
+ * `pointer-events: none` und leere Inhalte → rein visuell, keine Layout-
+ * Seiteneffekte.
+ */
+.day-col-overlay {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 2;
+  background-image:
+    linear-gradient(
+      to bottom,
+      var(--md-gridline-hour-overlay) 0.4px,
+      transparent 0.4px
+    ),
+    linear-gradient(
+      to bottom,
+      var(--md-gridline-half-overlay) 0.3px,
+      transparent 0.3px
+    ),
+    linear-gradient(
+      to bottom,
+      rgba(
+        29, 27, 32,
+        calc(0.06 * var(--md-gridline-quarter-visible))
+      ) 0.25px,
       transparent 0.25px
     );
   background-repeat: repeat-y;
@@ -302,66 +386,95 @@ body.page--a5 .grid-wrap {
   text-align: start;
 }
 
+/*
+ * Typo-Stufen (xs..lg): Schriftgrößen bewusst größer als die ursprünglichen
+ * 3.9–6.4pt, damit Text in großen Blöcken (z.B. „Arbeit" 9–17 Uhr) klar
+ * lesbar ist. xs bleibt konservativ, weil diese Kacheln < 4 mm hoch sind.
+ */
 .tile--xs .tile__title--single {
-  font-size: 3.9pt;
+  font-size: 4.6pt;
 }
 
 .tile--xs .tile__corner,
 .tile--xs .tile__title,
 .tile--xs .tile__note {
-  font-size: 3.9pt;
+  font-size: 4.6pt;
 }
 
 .tile--sm .tile__corner {
-  font-size: 4.4pt;
+  font-size: 5.4pt;
 }
 
 .tile--sm .tile__title {
-  font-size: 4.9pt;
+  font-size: 6pt;
   max-height: 5em;
 }
 
 .tile--sm .tile__note {
-  font-size: 4.35pt;
+  font-size: 5.2pt;
   max-height: 3.5em;
 }
 
 .tile--md .tile__corner {
-  font-size: 4.8pt;
+  font-size: 5.8pt;
 }
 
 .tile--md .tile__title {
-  font-size: 5.6pt;
+  font-size: 7pt;
   max-height: 6em;
 }
 
 .tile--md .tile__note {
-  font-size: 5pt;
+  font-size: 6pt;
   max-height: 4em;
 }
 
+.tile--lg {
+  /* etwas mehr Innenabstand, damit große Titel nicht an Tile-Kante kleben */
+  padding: 2.5px 4.5px 3.5px;
+}
+
 .tile--lg .tile__corner {
-  font-size: 5.2pt;
+  font-size: 6.2pt;
 }
 
 .tile--lg .tile__title {
-  font-size: 6.4pt;
+  font-size: 8.2pt;
   max-height: 8em;
 }
 
 .tile--lg .tile__note {
-  font-size: 5.5pt;
+  font-size: 6.8pt;
   max-height: 5em;
 }
 
 /* ---- Footer ---- */
 
 .page-footer {
-  margin: var(--md-space-sm) var(--md-space-sm) 0;
+  /* horizontal: keine eigene Marge, weil .page padding übernimmt */
+  margin: var(--md-space-md) 0 0;
   padding-top: 1mm;
   text-align: center;
   font-size: var(--md-typescale-footer-size);
   color: var(--md-sys-color-on-surface-variant);
   border-top: var(--md-footer-divider-width) solid
     var(--md-footer-divider-color);
+}
+
+/* ---- A5 Overrides: kompaktere Maße ---- */
+
+body.page--a5 .sheet {
+  padding: var(--md-page-margin-v-a5) var(--md-page-margin-h-a5);
+}
+
+body.page--a5 .page-header {
+  padding: 0 0 var(--md-space-sm);
+}
+
+body.page--a5 .page-footer {
+  margin-top: var(--md-space-sm);
+}
+
+body.page--a5 .day-head {
+  padding: 1.6mm 1mm 1.4mm;
 }
