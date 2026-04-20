@@ -67,7 +67,7 @@ Opens http://localhost:8501 in your browser automatically.
 
 Wer Modern-PDF auf Streamlit Community Cloud erzwingen will, kann folgenden Weg versuchen – **offiziell nicht unterstützt**, Risiken im Abschnitt unten:
 
-1. **Chromium-Systembibliotheken** via `packages.txt` im Repo-Root installieren lassen (Beispiel siehe [`packages.txt`](packages.txt) in diesem Repo – standardmäßig leer gelassen / auskommentiert).
+1. **Chromium-Systembibliotheken** via `packages.txt` im Repo-Root installieren lassen. **Wichtig:** In `packages.txt` dürfen **nur** Debian-Paketnamen stehen, **genau eine Zeile pro Paket** – keine Kommentare, keine erklärenden Sätze (Community Cloud wertet die Datei wie eine Paketliste aus; Text würde den Build zerstören). Eine kopierbare Paketliste liegt in [`packages.modern-pdf.example.txt`](packages.modern-pdf.example.txt); Inhalt bei Bedarf nach `packages.txt` übernehmen.
 2. **Playwright-Browser** beim App-Start einmalig herunterladen. Dazu früh in `app.py` (vor dem ersten Modern-PDF-Export) z. B. bootstrap-mäßig ausführen:
 
    ```python
