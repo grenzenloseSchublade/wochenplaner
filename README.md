@@ -106,7 +106,7 @@ Empfehlung: Für öffentliche Deployments **Klassisch** belassen; Modern-PDF lok
 | **Plan teilen** | Per URL-Link (kein Backend) | Via URL link (no backend) |
 | **JSON-Download** | Plan als Datei speichern & importieren | Save plan as file & import |
 | **Farb-Gedächtnis** | Farbe pro Aktivität wird gespeichert | Color saved per activity name |
-| **Eigene Aktivitäten** | Freie Namen + Farbwahl, bleiben erhalten | Custom names + color picker, persisted |
+| **Eigene Aktivitäten** | Freie Namen + Farbwahl, bleiben erhalten, einzeln löschbar | Custom names + color picker, persisted, deletable one by one |
 | **15-Min-Raster** | Viertelstunden-Genauigkeit | Quarter-hour precision |
 | **Überlappungswarnung** | Zeitkonflikte erkennen | Detect time conflicts |
 | **Sortierte Einträge** | Nach Tag + Uhrzeit | By day + time |

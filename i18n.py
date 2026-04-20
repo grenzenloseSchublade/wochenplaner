@@ -115,6 +115,12 @@ TRANSLATIONS: dict[Lang, dict[str, str]] = {
         "pdf_modern_failed": "Modern-PDF konnte nicht erzeugt werden.",
         "pdf_export_failed": "PDF konnte nicht erzeugt werden.",
         "pdf_error_details": "Technische Details",
+        # Eigene Aktivitäten verwalten
+        "custom_activities_manage": "Eigene Aktivitäten verwalten",
+        "custom_activities_empty": "Noch keine eigenen Aktivitäten angelegt.",
+        "custom_activity_in_use": "Wird in {count} Terminen verwendet – Termine bleiben erhalten.",
+        "custom_activity_delete_help": "Aus der Auswahlliste entfernen (Termine bleiben erhalten).",
+        "custom_activity_deleted": "„{name}“ aus der Liste entfernt.",
         # File management
         "file_mgmt": "Dateiverwaltung",
         "import_json": "JSON importieren",
@@ -240,6 +246,12 @@ TRANSLATIONS: dict[Lang, dict[str, str]] = {
         "pdf_modern_failed": "Could not generate modern PDF.",
         "pdf_export_failed": "Could not generate PDF.",
         "pdf_error_details": "Technical details",
+        # Custom activities management
+        "custom_activities_manage": "Manage custom activities",
+        "custom_activities_empty": "No custom activities yet.",
+        "custom_activity_in_use": "Used in {count} entries – entries stay untouched.",
+        "custom_activity_delete_help": "Remove from the pick list (your entries keep their name).",
+        "custom_activity_deleted": "Removed “{name}” from the list.",
         # File management
         "file_mgmt": "File management",
         "import_json": "Import JSON",

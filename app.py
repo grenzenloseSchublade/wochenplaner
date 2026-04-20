@@ -106,6 +106,32 @@ def _save_user_prefs() -> None:
     )
 
 
+def _delete_custom_activity(name: str) -> bool:
+    """Entfernt einen Custom-Namen aus Auswahlliste + Farb-Map.
+
+    Bestehende Plan-Einträge behalten ihren Namen und ihre Farbe – diese
+    Funktion kürzt nur die Preset-Bibliothek (und damit das Dropdown).
+    Preset-Namen aus `AKTIVITAETEN_FARBEN` sind tabu und werden nie entfernt.
+    Gibt True zurück, wenn tatsächlich etwas entfernt wurde.
+    """
+    if name in AKTIVITAETEN_FARBEN:
+        return False
+    changed = False
+    custom = st.session_state.get("custom_activities") or []
+    if name in custom:
+        custom.remove(name)
+        st.session_state.custom_activities = custom
+        changed = True
+    colors = st.session_state.get("activity_colors") or {}
+    if name in colors:
+        colors.pop(name, None)
+        st.session_state.activity_colors = colors
+        changed = True
+    if changed:
+        _save_user_prefs()
+    return changed
+
+
 def _sync_prefs_from_activities(acts: list[Activity]) -> None:
     """Learn custom names and colors from existing activities."""
     changed = False
@@ -1133,6 +1159,49 @@ def main() -> None:
                     width="stretch",
                     key="btn_csv",
                 )
+
+        # ── Eigene Aktivitäten verwalten ─────────────────────────────────────
+        _customs = [
+            n
+            for n in (st.session_state.get("custom_activities") or [])
+            if n not in AKTIVITAETEN_FARBEN
+        ]
+        if _customs:
+            with st.expander(t("custom_activities_manage", lang), expanded=False):
+                _used_counts: dict[str, int] = {}
+                for _a in st.session_state.get("activities") or []:
+                    _n = _a.get("name", "")
+                    if _n:
+                        _used_counts[_n] = _used_counts.get(_n, 0) + 1
+                for nm in _customs:
+                    c_left, c_right = st.columns([4, 1], vertical_alignment="center")
+                    with c_left:
+                        _col = st.session_state.activity_colors.get(nm, "#F3E5AB")
+                        st.markdown(
+                            "<div style='display:flex;align-items:center;gap:8px'>"
+                            f"<span style='display:inline-block;width:14px;height:14px;"
+                            f"border-radius:3px;background:{_col};"
+                            "border:1px solid rgba(0,0,0,.2)'></span>"
+                            f"<span>{nm}</span></div>",
+                            unsafe_allow_html=True,
+                        )
+                        _n_used = _used_counts.get(nm, 0)
+                        if _n_used:
+                            st.caption(
+                                t("custom_activity_in_use", lang).format(count=_n_used)
+                            )
+                    with c_right:
+                        if st.button(
+                            t("delete", lang),
+                            key=f"del_custom_{nm}",
+                            help=t("custom_activity_delete_help", lang),
+                            width="stretch",
+                        ):
+                            if _delete_custom_activity(nm):
+                                st.toast(
+                                    t("custom_activity_deleted", lang).format(name=nm)
+                                )
+                                st.rerun()
 
         st.markdown(
             "<div style='text-align:center;padding:16px 0 4px;"
