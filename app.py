@@ -158,15 +158,17 @@ def _reset_form_keys() -> None:
 
 
 def _sync_pdf_title_note_widgets() -> None:
-    """PDF-Expander: `plan_title`/`plan_note` mit Widget-Keys angleichen.
+    """PDF-Expander: Widget-Keys verwerfen, damit Titel/Notiz aus `plan_*` kommen.
 
-    `st.text_input`/`text_area` mit `key` speichern den Wert unter eigenen Keys
-    (`pti`, `inp_plan_note`). Wird nur `plan_title` programmatisch gesetzt,
-    bleiben die Widget-Keys veraltet – die Sync-Logik im Expander würde beim
-    nächsten Run die importierten Werte wieder überschreiben.
+    Streamlit erlaubt **kein** direktes `session_state["pti"] = …` für gebundene
+    Widget-Keys (StreamlitAPIException), sobald die Widgets im selben Run schon
+    gerendert wurden. Stattdessen die Keys entfernen; beim nächsten Rendern von
+    `text_input`/`text_area` (vorher im Run oder nach `st.rerun()`) werden die
+    Felder aus dem übergebenen `value=` (`plan_title` / `plan_note`) neu
+    initialisiert.
     """
-    st.session_state["pti"] = str(st.session_state.get("plan_title") or "")
-    st.session_state["inp_plan_note"] = str(st.session_state.get("plan_note") or "")
+    st.session_state.pop("pti", None)
+    st.session_state.pop("inp_plan_note", None)
 
 
 def decode_plan(data: str) -> list[Activity] | None:
@@ -411,7 +413,7 @@ def _new_plan() -> None:
     st.session_state.plan_note = ""
     _kw = datetime.now().isocalendar()[1]
     st.session_state.plan_title = f"Mein Wochenplan – KW {_kw}"
-    _sync_pdf_title_note_widgets()
+    st.session_state["_pending_pdf_widget_resync"] = True
     save_activities([])
     _reset_form_keys()
     _ls_counter = st.session_state.get("_ls_wc", 0) + 1
@@ -867,6 +869,11 @@ def main() -> None:
     acts: list[Activity] = st.session_state.activities
     _sync_prefs_from_activities(acts)
 
+    # Nach JSON-Import / „Neuer Plan“: Widget-Keys erst hier löschen (vor Sidebar),
+    # nicht direkt nach Import – dort wären PDF-Widgets schon instanziiert.
+    if st.session_state.pop("_pending_pdf_widget_resync", False):
+        _sync_pdf_title_note_widgets()
+
     with st.sidebar:
         # ── Language selector ────────────────────────────────────────────────
         lang_options = list(LANG_FLAGS.keys())
@@ -1134,7 +1141,9 @@ def main() -> None:
                                         if note_upd is not None:
                                             st.session_state.plan_note = note_upd
                                         if tit_upd is not None or note_upd is not None:
-                                            _sync_pdf_title_note_widgets()
+                                            st.session_state[
+                                                "_pending_pdf_widget_resync"
+                                            ] = True
                                         st.session_state.pdf_bytes = None
                                         _sync_prefs_from_activities(_to_save)
                                         save_activities(_to_save)
