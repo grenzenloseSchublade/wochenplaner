@@ -1,5 +1,7 @@
 """Tests für Plan-JSON (Import/Datei-Format)."""
 
+import json
+
 from plan_json import (
     PlanParseError,
     build_plan_document,
@@ -64,3 +66,32 @@ def test_load_plan_from_file_legacy_list(tmp_path) -> None:
     disk = load_plan_from_file(fp)
     assert len(disk.activities) == 1
     assert not disk.title_from_file and not disk.note_from_file
+
+
+def test_build_plan_document_roundtrip_parse_plan_import() -> None:
+    """Export-JSON (title, plan_note, activities) muss sich identisch parsen lassen."""
+    acts = [
+        {
+            "id": "a",
+            "name": "Test",
+            "day": "Montag",
+            "start": "09:00",
+            "end": "10:00",
+            "color": "#F3E5AB",
+        },
+    ]
+    doc = build_plan_document(acts, "Mein Titel", "Meine Notiz")
+    acts2, tit, pn = parse_plan_import(doc)
+    assert acts2 == acts
+    assert tit == "Mein Titel"
+    assert pn == "Meine Notiz"
+
+
+def test_parse_plan_import_roundtrip_via_json_dumps() -> None:
+    """Wie beim Datei-Download: dict → JSON-String → loads → parse."""
+    doc = build_plan_document([], "T", "N")
+    raw = json.loads(json.dumps(doc))
+    acts, tit, pn = parse_plan_import(raw)
+    assert acts == []
+    assert tit == "T"
+    assert pn == "N"

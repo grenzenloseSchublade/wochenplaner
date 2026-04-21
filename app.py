@@ -157,6 +157,18 @@ def _reset_form_keys() -> None:
         st.session_state.pop(k, None)
 
 
+def _sync_pdf_title_note_widgets() -> None:
+    """PDF-Expander: `plan_title`/`plan_note` mit Widget-Keys angleichen.
+
+    `st.text_input`/`text_area` mit `key` speichern den Wert unter eigenen Keys
+    (`pti`, `inp_plan_note`). Wird nur `plan_title` programmatisch gesetzt,
+    bleiben die Widget-Keys veraltet – die Sync-Logik im Expander würde beim
+    nächsten Run die importierten Werte wieder überschreiben.
+    """
+    st.session_state["pti"] = str(st.session_state.get("plan_title") or "")
+    st.session_state["inp_plan_note"] = str(st.session_state.get("plan_note") or "")
+
+
 def decode_plan(data: str) -> list[Activity] | None:
     """Decode a shared plan from URL parameter."""
     try:
@@ -399,6 +411,7 @@ def _new_plan() -> None:
     st.session_state.plan_note = ""
     _kw = datetime.now().isocalendar()[1]
     st.session_state.plan_title = f"Mein Wochenplan – KW {_kw}"
+    _sync_pdf_title_note_widgets()
     save_activities([])
     _reset_form_keys()
     _ls_counter = st.session_state.get("_ls_wc", 0) + 1
@@ -789,6 +802,7 @@ def main() -> None:
             if ls_pn and isinstance(ls_pn, str):
                 st.session_state.plan_note = ls_pn
         st.session_state.ls_plan_note_checked = True
+        _sync_pdf_title_note_widgets()
 
     # ── Restore user prefs from LocalStorage ────────────────────────────────
     if "ls_prefs_checked" not in st.session_state:
@@ -1119,6 +1133,8 @@ def main() -> None:
                                             st.session_state.plan_title = tit_upd
                                         if note_upd is not None:
                                             st.session_state.plan_note = note_upd
+                                        if tit_upd is not None or note_upd is not None:
+                                            _sync_pdf_title_note_widgets()
                                         st.session_state.pdf_bytes = None
                                         _sync_prefs_from_activities(_to_save)
                                         save_activities(_to_save)
