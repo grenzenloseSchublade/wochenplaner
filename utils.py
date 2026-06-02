@@ -5,7 +5,14 @@ import unicodedata
 from datetime import datetime
 from typing import NotRequired, TypedDict
 
-from constants import END_HOUR, PX_PER_MIN, START_HOUR, WOCHENTAGE
+from constants import (
+    END_HOUR,
+    PLAN_NOTE_CHARS_PER_LINE,
+    PLAN_NOTE_MAX_LINES,
+    PX_PER_MIN,
+    START_HOUR,
+    WOCHENTAGE,
+)
 
 
 class Activity(TypedDict):
@@ -22,6 +29,33 @@ _HEX_COLOR_RE = re.compile(r"^#[0-9a-fA-F]{6}$")
 _TIME_RE = re.compile(r"^\d{2}:\d{2}$")
 
 _REQUIRED_KEYS = {"id", "name", "day", "start", "end", "color"}
+_BR_TAG_RE = re.compile(r"<br\s*/?>", re.IGNORECASE)
+
+
+def normalize_plan_note_newlines(text: str) -> str:
+    """Echte Zeilenumbrüche; literal ``<br>`` aus HTML/Copy-Paste → ``\\n``."""
+    s = _BR_TAG_RE.sub("\n", text)
+    return s.replace("\r\n", "\n").replace("\r", "\n")
+
+
+def plan_note_lines(text: str) -> list[str]:
+    """Plan-Notiz als bis zu PLAN_NOTE_MAX_LINES Anzeigezeilen (PDF/Header)."""
+    lines: list[str] = []
+    for raw in normalize_plan_note_newlines(text).strip().splitlines()[
+        :PLAN_NOTE_MAX_LINES
+    ]:
+        line = raw.strip()
+        if not line:
+            continue
+        if len(line) > PLAN_NOTE_CHARS_PER_LINE:
+            line = line[:PLAN_NOTE_CHARS_PER_LINE] + "…"
+        lines.append(line)
+    return lines
+
+
+def plan_note_multiline(text: str) -> str:
+    """Mehrzeilige Plan-Notiz für HTML mit ``white-space: pre-line``."""
+    return "\n".join(plan_note_lines(text))
 
 
 def default_plan_title(when: datetime | None = None) -> str:

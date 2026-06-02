@@ -80,6 +80,7 @@ body {
   color: var(--md-sys-color-on-surface-variant);
   max-width: 90%;
   line-height: 1.3;
+  white-space: pre-line;
 }
 
 /* ---- Kalender-Tabelle als zusammenhängender Container ---- */

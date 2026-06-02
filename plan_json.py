@@ -8,7 +8,7 @@ from pathlib import Path
 from typing import Any
 
 from constants import DATA_FILE
-from utils import Activity, validate_activity
+from utils import Activity, normalize_plan_note_newlines, validate_activity
 
 PLAN_FORMAT = "wochenplaner"
 PLAN_VERSION = 1
@@ -63,7 +63,9 @@ def _plan_note_from_dict(data: dict[str, Any]) -> tuple[bool, str]:
     if "plan_note" not in data:
         return False, ""
     raw = data.get("plan_note")
-    return True, "" if raw is None else str(raw).strip()
+    if raw is None:
+        return True, ""
+    return True, normalize_plan_note_newlines(str(raw)).strip()
 
 
 def load_plan_from_file(fp: Path | None = None) -> DiskPlanLoad:
@@ -124,7 +126,11 @@ def parse_plan_import(raw: Any) -> tuple[list[Activity], str | None, str | None]
     pno: str | None
     if "plan_note" in raw:
         pn = raw.get("plan_note")
-        pno = "" if pn is None else str(pn).strip()
+        pno = (
+            ""
+            if pn is None
+            else normalize_plan_note_newlines(str(pn)).strip()
+        )
     else:
         pno = None
 

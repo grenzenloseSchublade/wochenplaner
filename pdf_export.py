@@ -13,15 +13,15 @@ from reportlab.pdfbase.pdfdoc import PDFArray, PDFDictionary, PDFString
 from reportlab.pdfbase.pdfmetrics import stringWidth
 from reportlab.pdfgen.canvas import Canvas
 
-from constants import (
-    PLAN_NOTE_CHARS_PER_LINE,
-    PLAN_NOTE_MAX_LINES,
-    PX_PER_MIN,
-    WOCHENTAGE,
-)
+from constants import PX_PER_MIN, WOCHENTAGE
 from i18n import WOCHENTAGE_KURZ_I18N, Lang, t
 from pdf_context import PdfExportContext, build_pdf_context
-from utils import Activity, get_secondary_text_color, inline_note_fits_block_height
+from utils import (
+    Activity,
+    get_secondary_text_color,
+    inline_note_fits_block_height,
+    plan_note_lines,
+)
 
 # Mindestdauer in Minuten, ab der der Aktivitätsname im Block erscheint (nicht nur Ecke/Kurzform)
 MIN_MINUTES_FOR_NAME = 18
@@ -366,16 +366,7 @@ def generate_pdf_from_context(ctx: PdfExportContext) -> bytes:
     time_w_r = 9 * mm
     footer_h = 4 * mm
 
-    plan_note_stripped = plan_note.strip()
-    _note_lines: list[str] = []
-    if plan_note_stripped:
-        for raw_line in plan_note_stripped.splitlines()[:PLAN_NOTE_MAX_LINES]:
-            line = raw_line.strip()
-            if not line:
-                continue
-            if len(line) > PLAN_NOTE_CHARS_PER_LINE:
-                line = line[:PLAN_NOTE_CHARS_PER_LINE] + "…"
-            _note_lines.append(line)
+    _note_lines = plan_note_lines(plan_note) if plan_note.strip() else []
     subtitle_h = len(_note_lines) * 3 * mm if _note_lines else 0
 
     grid_x = mg_l + time_w_l

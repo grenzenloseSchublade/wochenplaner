@@ -13,7 +13,7 @@
     <header class="page-header">
       <h1 class="page-title">{{ title }}</h1>
       {% if has_plan_note %}
-      <p class="plan-note">{{ plan_note | e | replace("\n", "<br>") | safe }}</p>
+      <p class="plan-note">{{ plan_note | e }}</p>
       {% endif %}
     </header>
 

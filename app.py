@@ -53,6 +53,7 @@ from storage import ls_delete, ls_load, ls_save
 from templates import get_template_activities, get_template_names
 from utils import (
     default_plan_title,
+    normalize_plan_note_newlines,
     Activity,
     check_overlap,
     get_text_color,
@@ -952,11 +953,12 @@ def main() -> None:
             _new_plan_note = st.text_area(
                 t("plan_note", lang),
                 st.session_state.plan_note,
-                height=80,
+                height=160,
                 max_chars=PLAN_NOTE_MAX_CHARS,
                 key="inp_plan_note",
                 placeholder=t("plan_note_placeholder", lang),
             )
+            _new_plan_note = normalize_plan_note_newlines(_new_plan_note)
             if _new_plan_note != st.session_state.plan_note:
                 st.session_state.plan_note = _new_plan_note
                 _ls_counter = st.session_state.get("_ls_wc", 0) + 1
@@ -1252,11 +1254,12 @@ def main() -> None:
         )
         _pn = st.session_state.plan_note.strip()
         if _pn:
-            _pn_escaped = html_lib.escape(_pn[:PLAN_NOTE_MAX_CHARS])
-            _pn_html = _pn_escaped.replace("\n", "<br>")
+            _pn_display = normalize_plan_note_newlines(_pn)[:PLAN_NOTE_MAX_CHARS]
             _th += (
                 "<p style='text-align:center;font-size:.82rem;"
-                "color:#888;margin-bottom:8px'>" + _pn_html + "</p>"
+                "color:#888;margin-bottom:8px;white-space:pre-line'>"
+                + html_lib.escape(_pn_display)
+                + "</p>"
             )
         else:
             _th += "<div style='margin-bottom:12px'></div>"
