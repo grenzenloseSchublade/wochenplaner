@@ -52,6 +52,7 @@ from plan_json import (
 from storage import ls_delete, ls_load, ls_save
 from templates import get_template_activities, get_template_names
 from utils import (
+    default_plan_title,
     Activity,
     check_overlap,
     get_text_color,
@@ -412,8 +413,7 @@ def _new_plan() -> None:
     st.session_state.activities = []
     st.session_state.edit_mode = None
     st.session_state.plan_note = ""
-    _kw = datetime.now().isocalendar()[1]
-    st.session_state.plan_title = f"Wochenplan – KW {_kw}"
+    st.session_state.plan_title = default_plan_title()
     st.session_state["_pending_pdf_widget_resync"] = True
     save_activities([])
     _reset_form_keys()
@@ -733,11 +733,10 @@ def main() -> None:
 
     st.html(_SEO_HTML)
 
-    _kw = datetime.now().isocalendar()[1]
     _defaults: list[tuple] = [
         ("activities", None),
         ("edit_mode", None),
-        ("plan_title", f"Wochenplan – KW {_kw}"),
+        ("plan_title", default_plan_title()),
         ("plan_note", ""),
         ("pdf_bytes", None),
         ("pdf_format", "DIN-A4"),

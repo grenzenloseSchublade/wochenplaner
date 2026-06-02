@@ -1,11 +1,25 @@
 """Smoke tests for PDF export."""
 
 import unittest
+from datetime import datetime
 
+from pdf_context import build_pdf_context
 from pdf_export import generate_pdf, minutes_to_hhmm
+from utils import default_plan_title
 
 
 class TestPdfExport(unittest.TestCase):
+    def test_default_plan_title_iso_calendar_week(self) -> None:
+        fixed = datetime(2024, 12, 30)
+        kw = fixed.isocalendar()[1]
+        self.assertEqual(default_plan_title(fixed), f"Wochenplan – KW {kw}")
+        self.assertNotIn("{_kw}", default_plan_title(fixed))
+
+    def test_build_pdf_context_default_title_resolves_kw(self) -> None:
+        ctx = build_pdf_context([])
+        self.assertRegex(ctx["title"], r"^Wochenplan – KW \d{1,2}$")
+        self.assertNotIn("{_kw}", ctx["title"])
+
     def test_generates_valid_pdf_header(self) -> None:
         activities = [
             {

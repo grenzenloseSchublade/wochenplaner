@@ -7,7 +7,7 @@ from collections.abc import Sequence
 from typing import Literal, TypedDict
 
 from i18n import Lang
-from utils import Activity
+from utils import Activity, default_plan_title
 
 PdfStyleTheme = Literal["minimal", "structured", "balanced"]
 DEFAULT_PDF_STYLE_THEME: PdfStyleTheme = "balanced"
@@ -36,7 +36,7 @@ def build_pdf_context(
     paper_format: str = "A4",
     start_hour: int = 6,
     end_hour: int = 22,
-    title: str = "Wochenplan",
+    title: str | None = None,
     lang: Lang = "de",
     plan_note: str = "",
     show_axis_times: bool = True,
@@ -45,12 +45,13 @@ def build_pdf_context(
     pdf_style_theme: PdfStyleTheme = DEFAULT_PDF_STYLE_THEME,
 ) -> PdfExportContext:
     """Baut den Export-Context aus denselben Parametern wie bisher `generate_pdf`."""
+    resolved_title = default_plan_title() if title is None else title
     return PdfExportContext(
         activities=list(activities),
         paper_format=paper_format,
         start_hour=start_hour,
         end_hour=end_hour,
-        title=title,
+        title=resolved_title,
         lang=lang,
         plan_note=plan_note,
         show_axis_times=show_axis_times,

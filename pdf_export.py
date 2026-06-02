@@ -636,7 +636,7 @@ def generate_pdf(
     paper_format: str = "A4",
     start_hour: int = 6,
     end_hour: int = 22,
-    title: str = "Wochenplan",
+    title: str | None = None,
     lang: Lang = "de",
     plan_note: str = "",
     *,

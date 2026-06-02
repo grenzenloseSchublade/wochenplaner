@@ -2,6 +2,7 @@
 
 import re
 import unicodedata
+from datetime import datetime
 from typing import NotRequired, TypedDict
 
 from constants import END_HOUR, PX_PER_MIN, START_HOUR, WOCHENTAGE
@@ -21,6 +22,13 @@ _HEX_COLOR_RE = re.compile(r"^#[0-9a-fA-F]{6}$")
 _TIME_RE = re.compile(r"^\d{2}:\d{2}$")
 
 _REQUIRED_KEYS = {"id", "name", "day", "start", "end", "color"}
+
+
+def default_plan_title(when: datetime | None = None) -> str:
+    """Standard-Plantitel mit ISO-Kalenderwoche (KW), z. B. „Wochenplan – KW 23“."""
+    dt = when or datetime.now()
+    kw = dt.isocalendar()[1]
+    return f"Wochenplan – KW {kw}"
 
 
 def t2m(t: str) -> int:

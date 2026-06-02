@@ -48,21 +48,63 @@ class TestHtmlPdfSinglePage(unittest.TestCase):
     """
 
     FULL_ACTIVITIES = [
-        {"id": "w", "name": "Arbeit", "day": "Montag",
-         "start": "09:00", "end": "17:00", "color": "#BFD7FF",
-         "note": "Großraumbüro"},
-        {"id": "m", "name": "Meeting", "day": "Dienstag",
-         "start": "10:00", "end": "11:30", "color": "#F3E5AB"},
-        {"id": "s", "name": "Sport", "day": "Mittwoch",
-         "start": "07:00", "end": "08:00", "color": "#FFD1DC"},
-        {"id": "l", "name": "Lernen", "day": "Donnerstag",
-         "start": "08:00", "end": "12:00", "color": "#C5E1A5"},
-        {"id": "k", "name": "Kochen", "day": "Freitag",
-         "start": "18:00", "end": "19:30", "color": "#FFE0B2"},
-        {"id": "e", "name": "Einkaufen", "day": "Samstag",
-         "start": "10:00", "end": "11:00", "color": "#D7CCC8"},
-        {"id": "r", "name": "Ruhen", "day": "Sonntag",
-         "start": "14:00", "end": "16:00", "color": "#E1BEE7"},
+        {
+            "id": "w",
+            "name": "Arbeit",
+            "day": "Montag",
+            "start": "09:00",
+            "end": "17:00",
+            "color": "#BFD7FF",
+            "note": "Großraumbüro",
+        },
+        {
+            "id": "m",
+            "name": "Meeting",
+            "day": "Dienstag",
+            "start": "10:00",
+            "end": "11:30",
+            "color": "#F3E5AB",
+        },
+        {
+            "id": "s",
+            "name": "Sport",
+            "day": "Mittwoch",
+            "start": "07:00",
+            "end": "08:00",
+            "color": "#FFD1DC",
+        },
+        {
+            "id": "l",
+            "name": "Lernen",
+            "day": "Donnerstag",
+            "start": "08:00",
+            "end": "12:00",
+            "color": "#C5E1A5",
+        },
+        {
+            "id": "k",
+            "name": "Kochen",
+            "day": "Freitag",
+            "start": "18:00",
+            "end": "19:30",
+            "color": "#FFE0B2",
+        },
+        {
+            "id": "e",
+            "name": "Einkaufen",
+            "day": "Samstag",
+            "start": "10:00",
+            "end": "11:00",
+            "color": "#D7CCC8",
+        },
+        {
+            "id": "r",
+            "name": "Ruhen",
+            "day": "Sonntag",
+            "start": "14:00",
+            "end": "16:00",
+            "color": "#E1BEE7",
+        },
     ]
 
     def _assert_one_page(self, paper_format: str, plan_note: str) -> None:
@@ -71,7 +113,7 @@ class TestHtmlPdfSinglePage(unittest.TestCase):
             paper_format=paper_format,
             start_hour=6,
             end_hour=22,
-            title="Wochenplan",
+            title="Wochenplan – KW 1",
             plan_note=plan_note,
             lang="de",
             show_block_times=True,
@@ -79,7 +121,8 @@ class TestHtmlPdfSinglePage(unittest.TestCase):
         data = render_html_pdf(ctx)
         reader = pypdf.PdfReader(io.BytesIO(data))
         self.assertEqual(
-            len(reader.pages), 1,
+            len(reader.pages),
+            1,
             f"{paper_format} mit note={bool(plan_note)} ergab "
             f"{len(reader.pages)} Seiten – muss 1 sein.",
         )
