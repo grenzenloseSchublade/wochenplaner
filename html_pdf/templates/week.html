@@ -4,13 +4,7 @@
 <head>
   <meta charset="utf-8" />
   <title>{{ title }}</title>
-  <style>
-    {
-        {
-        css_bundle | safe
-      }
-    }
-  </style>
+  <style>{{ css_bundle | safe }}</style>
 </head>
 
 <body class="page theme--{{ pdf_style_theme }} {% if paper_format == 'A5' %}page--a5{% endif %}"
