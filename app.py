@@ -413,7 +413,7 @@ def _new_plan() -> None:
     st.session_state.edit_mode = None
     st.session_state.plan_note = ""
     _kw = datetime.now().isocalendar()[1]
-    st.session_state.plan_title = f"Mein Wochenplan – KW {_kw}"
+    st.session_state.plan_title = f"Wochenplan – KW {_kw}"
     st.session_state["_pending_pdf_widget_resync"] = True
     save_activities([])
     _reset_form_keys()
@@ -737,7 +737,7 @@ def main() -> None:
     _defaults: list[tuple] = [
         ("activities", None),
         ("edit_mode", None),
-        ("plan_title", f"Mein Wochenplan – KW {_kw}"),
+        ("plan_title", f"Wochenplan – KW {_kw}"),
         ("plan_note", ""),
         ("pdf_bytes", None),
         ("pdf_format", "DIN-A4"),
