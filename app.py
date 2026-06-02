@@ -24,6 +24,7 @@ from constants import (
     DATA_FILE,
     DEFAULT_VON,
     END_HOUR,
+    PLAN_NOTE_MAX_CHARS,
     PX_PER_MIN,
     START_HOUR,
     TIME_OPTIONS,
@@ -953,6 +954,7 @@ def main() -> None:
                 t("plan_note", lang),
                 st.session_state.plan_note,
                 height=80,
+                max_chars=PLAN_NOTE_MAX_CHARS,
                 key="inp_plan_note",
                 placeholder=t("plan_note_placeholder", lang),
             )
@@ -1251,10 +1253,11 @@ def main() -> None:
         )
         _pn = st.session_state.plan_note.strip()
         if _pn:
-            _pn_display = _pn[:100] + ("…" if len(_pn) > 100 else "")
+            _pn_escaped = html_lib.escape(_pn[:PLAN_NOTE_MAX_CHARS])
+            _pn_html = _pn_escaped.replace("\n", "<br>")
             _th += (
                 "<p style='text-align:center;font-size:.82rem;"
-                "color:#888;margin-bottom:8px'>" + html_lib.escape(_pn_display) + "</p>"
+                "color:#888;margin-bottom:8px'>" + _pn_html + "</p>"
             )
         else:
             _th += "<div style='margin-bottom:12px'></div>"

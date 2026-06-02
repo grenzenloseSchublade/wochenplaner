@@ -2,7 +2,12 @@
 
 from __future__ import annotations
 
-from constants import PX_PER_MIN, WOCHENTAGE
+from constants import (
+    PLAN_NOTE_CHARS_PER_LINE,
+    PLAN_NOTE_MAX_LINES,
+    PX_PER_MIN,
+    WOCHENTAGE,
+)
 from i18n import WOCHENTAGE_KURZ_I18N, t
 from pdf_context import PdfExportContext
 from pdf_export import MIN_MINUTES_FOR_NAME, minutes_to_hhmm
@@ -16,9 +21,15 @@ from utils import (
 
 def _plan_note_display(plan_note: str) -> str:
     s = plan_note.strip()
-    if len(s) > 90:
-        return s[:90] + "…"
-    return s
+    lines: list[str] = []
+    for raw in s.splitlines()[:PLAN_NOTE_MAX_LINES]:
+        line = raw.strip()
+        if not line:
+            continue
+        if len(line) > PLAN_NOTE_CHARS_PER_LINE:
+            line = line[:PLAN_NOTE_CHARS_PER_LINE] + "…"
+        lines.append(line)
+    return "\n".join(lines)
 
 
 def _size_tier(dur_min: int, h_pct: float) -> str:
@@ -117,8 +128,7 @@ def build_week_template_vars(ctx: PdfExportContext) -> dict:
                     "dur_min": dur_min,
                     "show_name": dur_min >= MIN_MINUTES_FOR_NAME,
                     "show_corner": (
-                        ctx["show_block_times"]
-                        and dur_min >= MIN_MINUTES_FOR_CORNER
+                        ctx["show_block_times"] and dur_min >= MIN_MINUTES_FOR_CORNER
                     ),
                     "size_tier": tier,
                 }

@@ -13,7 +13,12 @@ from reportlab.pdfbase.pdfdoc import PDFArray, PDFDictionary, PDFString
 from reportlab.pdfbase.pdfmetrics import stringWidth
 from reportlab.pdfgen.canvas import Canvas
 
-from constants import PX_PER_MIN, WOCHENTAGE
+from constants import (
+    PLAN_NOTE_CHARS_PER_LINE,
+    PLAN_NOTE_MAX_LINES,
+    PX_PER_MIN,
+    WOCHENTAGE,
+)
 from i18n import WOCHENTAGE_KURZ_I18N, Lang, t
 from pdf_context import PdfExportContext, build_pdf_context
 from utils import Activity, get_secondary_text_color, inline_note_fits_block_height
@@ -362,7 +367,16 @@ def generate_pdf_from_context(ctx: PdfExportContext) -> bytes:
     footer_h = 4 * mm
 
     plan_note_stripped = plan_note.strip()
-    subtitle_h = 4 * mm if plan_note_stripped else 0
+    _note_lines: list[str] = []
+    if plan_note_stripped:
+        for raw_line in plan_note_stripped.splitlines()[:PLAN_NOTE_MAX_LINES]:
+            line = raw_line.strip()
+            if not line:
+                continue
+            if len(line) > PLAN_NOTE_CHARS_PER_LINE:
+                line = line[:PLAN_NOTE_CHARS_PER_LINE] + "…"
+            _note_lines.append(line)
+    subtitle_h = len(_note_lines) * 3 * mm if _note_lines else 0
 
     grid_x = mg_l + time_w_l
     grid_y = mg_b + footer_h
@@ -390,17 +404,14 @@ def generate_pdf_from_context(ctx: PdfExportContext) -> bytes:
     c.setFont("Helvetica-Bold", 11)
     c.drawCentredString(page_w / 2, title_y + 1.5 * mm, title)
 
-    # ── Plan-Notiz (Untertitel) ──────────────────────────────────────────────
-    if plan_note_stripped:
-        note_y = grid_y + grid_h + header_h
+    # ── Plan-Notiz (Untertitel, bis zu 3 Zeilen) ────────────────────────────
+    if _note_lines:
         c.setFillColor(HexColor("#888888"))
         c.setFont("Helvetica", 7)
-        display_note = (
-            plan_note_stripped[:90] + "…"
-            if len(plan_note_stripped) > 90
-            else plan_note_stripped
-        )
-        c.drawCentredString(page_w / 2, note_y + 0.8 * mm, display_note)
+        note_base_y = grid_y + grid_h + header_h
+        for i, nline in enumerate(_note_lines):
+            line_y = note_base_y + subtitle_h - (i + 1) * 3 * mm + 0.8 * mm
+            c.drawCentredString(page_w / 2, line_y, nline)
 
     # ── Tagesheader ──────────────────────────────────────────────────────────
     header_y = grid_y + grid_h

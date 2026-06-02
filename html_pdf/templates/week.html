@@ -1,19 +1,25 @@
 <!DOCTYPE html>
 <html lang="{{ lang }}">
+
 <head>
   <meta charset="utf-8" />
   <title>{{ title }}</title>
-  <style>{{ css_bundle | safe }}</style>
+  <style>
+    {
+        {
+        css_bundle | safe
+      }
+    }
+  </style>
 </head>
-<body
-  class="page theme--{{ pdf_style_theme }} {% if paper_format == 'A5' %}page--a5{% endif %}"
-  style="--slot-count: {{ slot_count }}; --half-slot-count: {{ half_slot_count }}; --grid-h: {% if paper_format == 'A5' %}var(--md-grid-height-a5){% else %}var(--md-grid-height-a4){% endif %};"
->
+
+<body class="page theme--{{ pdf_style_theme }} {% if paper_format == 'A5' %}page--a5{% endif %}"
+  style="--slot-count: {{ slot_count }}; --half-slot-count: {{ half_slot_count }}; --grid-h: {% if paper_format == 'A5' %}var(--md-grid-height-a5){% else %}var(--md-grid-height-a4){% endif %};">
   <div class="sheet">
     <header class="page-header">
       <h1 class="page-title">{{ title }}</h1>
       {% if has_plan_note %}
-      <p class="plan-note">{{ plan_note }}</p>
+      <p class="plan-note">{{ plan_note | e | replace("\n", "<br>") | safe }}</p>
       {% endif %}
     </header>
 
@@ -21,9 +27,8 @@
       <div class="day-header-row">
         <div class="corner-cell corner-cell--left"></div>
         {% for col in columns %}
-        <div
-          class="day-head {% if col.weekday_index < 5 %}day-head--week{% else %}day-head--weekend{% endif %}"
-        >{{ col.day_label }}</div>
+        <div class="day-head {% if col.weekday_index < 5 %}day-head--week{% else %}day-head--weekend{% endif %}">{{
+          col.day_label }}</div>
         {% endfor %}
         <div class="corner-cell corner-cell--right"></div>
       </div>
@@ -41,14 +46,11 @@
         </div>
 
         {% for col in columns %}
-        <div
-          class="day-col {% if col.weekday_index < 5 %}day-col--week{% else %}day-col--weekend{% endif %}"
-        >
+        <div class="day-col {% if col.weekday_index < 5 %}day-col--week{% else %}day-col--weekend{% endif %}">
           <div
-            class="day-col-inner {% if continuous_horizontal_grid %}day-col-inner--continuous{% else %}day-col-inner--lines{% endif %}"
-          >
+            class="day-col-inner {% if continuous_horizontal_grid %}day-col-inner--continuous{% else %}day-col-inner--lines{% endif %}">
             {% for b in col.blocks %}
-              {% include "partials/activity_tile.html" %}
+            {% include "partials/activity_tile.html" %}
             {% endfor %}
             <div class="day-col-overlay" aria-hidden="true"></div>
           </div>
@@ -70,4 +72,5 @@
     <footer class="page-footer">{{ footer }}</footer>
   </div>
 </body>
+
 </html>
