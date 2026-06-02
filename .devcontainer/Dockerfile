@@ -30,6 +30,8 @@ RUN pip install --no-cache-dir uv
 # ── Umgebungsvariablen ────────────────────────────────────────────────────────
 # Matplotlib: beschreibbares Cache-Verzeichnis (Docker-Volume-Permission-Fix)
 ENV MPLCONFIGDIR=/home/vscode/.config/matplotlib
+# uv: Cache-Volume liegt auf anderem Dateisystem → Hardlinks nicht möglich
+ENV UV_LINK_MODE=copy
 
 # ── Cache-Verzeichnisse anlegen ───────────────────────────────────────────────
 RUN mkdir -p /home/vscode/.config/matplotlib \

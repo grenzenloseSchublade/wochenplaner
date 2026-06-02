@@ -30,6 +30,7 @@
   "remoteEnv": {
     "PATH": "${containerEnv:PATH}:${containerWorkspaceFolder}/.venv/bin",
     "UV_PROJECT_ENVIRONMENT": "${containerWorkspaceFolder}/.venv",
+    "UV_LINK_MODE": "copy",
     "MPLCONFIGDIR": "/home/vscode/.config/matplotlib"
   },
   "customizations": {
@@ -48,7 +49,9 @@
         "python.testing.unittestEnabled": false,
         "python.testing.pytestPath": "${containerWorkspaceFolder}/.venv/bin/pytest",
         "python.testing.cwd": "${containerWorkspaceFolder}",
-        "python.testing.pytestArgs": ["tests"],
+        "python.testing.pytestArgs": [
+          "tests"
+        ],
         "editor.formatOnSave": true,
         "editor.codeActionsOnSave": {
           "source.fixAll.ruff": "explicit",
