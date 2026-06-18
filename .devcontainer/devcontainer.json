@@ -7,6 +7,9 @@
   "features": {
     "ghcr.io/devcontainers/features/github-cli:latest": {
       "version": "latest"
+    },
+    "ghcr.io/devcontainers/features/node:1": {
+      "version": "lts"
     }
   },
   "mounts": [

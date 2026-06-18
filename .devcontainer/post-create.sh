@@ -2,7 +2,7 @@
 set -euo pipefail
 
 echo "──────────────────────────────────────────"
-echo "  📦 Wochenplaner – Dev-Setup"
+echo "  Wochenplaner – Dev-Setup"
 echo "──────────────────────────────────────────"
 
 # Fix: Docker Volumes werden als root initialisiert → Ownership korrigieren
@@ -11,24 +11,33 @@ sudo chown -R vscode:vscode /home/vscode/.config/matplotlib 2>/dev/null || true
 
 # Lockfile vorhanden → --frozen (reproduzierbar), sonst sync + Hinweis
 if [ -f uv.lock ]; then
-    echo "🔒 uv.lock gefunden → uv sync --frozen"
+    echo "uv.lock gefunden → uv sync --frozen"
     uv sync --frozen
 else
-    echo "⚠️  Kein uv.lock → uv sync (generiert Lockfile)"
+    echo "Kein uv.lock → uv sync (generiert Lockfile)"
     uv sync
     echo ""
-    echo "💡 Tipp: Committe uv.lock für reproduzierbare Builds!"
+    echo "Tipp: Committe uv.lock für reproduzierbare Builds!"
     echo "   git add uv.lock && git commit -m 'chore: add uv.lock'"
 fi
 
 echo ""
-echo "🌐 Playwright Chromium (Modern-PDF) – Cache + Browser"
+echo "Playwright Chromium (Modern-PDF) – Cache + Browser"
 sudo mkdir -p /home/vscode/.cache/ms-playwright
 sudo chown -R vscode:vscode /home/vscode/.cache/ms-playwright
 NODE_OPTIONS=--no-deprecation uv run playwright install chromium
 
 echo ""
-echo "✅ Setup abgeschlossen."
+echo "Claude Code (npm) installieren/aktualisieren"
+if command -v npm >/dev/null 2>&1; then
+    npm install -g @anthropic-ai/claude-code
+    echo "   $(node --version) · npm $(npm --version) · claude $(claude --version 2>/dev/null || echo 'installiert')"
+else
+    echo "npm nicht gefunden – Node-Feature nicht aktiv?"
+fi
+
+echo ""
+echo "Setup abgeschlossen."
 echo "   App starten: uv run streamlit run app.py"
 echo "   oder kurz:   start   (Shell-Alias)"
 echo "──────────────────────────────────────────"
