@@ -7,6 +7,11 @@ from collections.abc import Sequence
 from typing import Literal, TypedDict
 
 from i18n import Lang
+from pdf_colors import (
+    DEFAULT_COLOR_SCHEME,
+    ColorScheme,
+    build_color_overrides,
+)
 from utils import Activity, default_plan_title
 
 PdfStyleTheme = Literal["minimal", "structured", "balanced"]
@@ -28,6 +33,11 @@ class PdfExportContext(TypedDict):
     continuous_horizontal_grid: bool
     # Nur Modern-PDF: visuelle Variante des Kalender-Chromes.
     pdf_style_theme: PdfStyleTheme
+    # Farbschema (beide Renderer): "color" | "grayscale" | "monochrome".
+    color_scheme: ColorScheme
+    # Vorab berechnete Kachelfarben pro Aktivitätsname (leer bei "color").
+    # Eine Quelle der Wahrheit für klassischen und modernen Renderer.
+    color_overrides: dict[str, str]
 
 
 def build_pdf_context(
@@ -43,11 +53,13 @@ def build_pdf_context(
     show_block_times: bool = True,
     continuous_horizontal_grid: bool = True,
     pdf_style_theme: PdfStyleTheme = DEFAULT_PDF_STYLE_THEME,
+    color_scheme: ColorScheme = DEFAULT_COLOR_SCHEME,
 ) -> PdfExportContext:
     """Baut den Export-Context aus denselben Parametern wie bisher `generate_pdf`."""
     resolved_title = default_plan_title() if title is None else title
+    acts = list(activities)
     return PdfExportContext(
-        activities=list(activities),
+        activities=acts,
         paper_format=paper_format,
         start_hour=start_hour,
         end_hour=end_hour,
@@ -58,4 +70,6 @@ def build_pdf_context(
         show_block_times=show_block_times,
         continuous_horizontal_grid=continuous_horizontal_grid,
         pdf_style_theme=pdf_style_theme,
+        color_scheme=color_scheme,
+        color_overrides=build_color_overrides(acts, color_scheme),
     )

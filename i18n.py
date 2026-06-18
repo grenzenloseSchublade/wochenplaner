@@ -112,6 +112,16 @@ TRANSLATIONS: dict[Lang, dict[str, str]] = {
             "Strukturiert: Primärlinie unter der Wochentagsleiste, Wochenend-Tint, weiche Card-Umrandung (Standard). "
             "Ausgewogen: Wochenend-Tint, klare Trennlinie ohne Akzentfarbe."
         ),
+        "pdf_colorscheme_label": "Farbschema",
+        "pdf_colorscheme_color": "Farbig",
+        "pdf_colorscheme_grayscale": "Graustufen",
+        "pdf_colorscheme_monochrome": "Monochrom",
+        "pdf_colorscheme_hint": (
+            "Farbig: Originalfarben (Standard). "
+            "Graustufen & Monochrom sind für Ausdrucke auf Schwarz-Weiß-Druckern gedacht: "
+            "jede Aktivität bekommt eine eigene, klar unterscheidbare Tonstufe – "
+            "Graustufen in Grau, Monochrom in Blautönen."
+        ),
         "pdf_modern_failed": "Modern-PDF konnte nicht erzeugt werden.",
         "pdf_export_failed": "PDF konnte nicht erzeugt werden.",
         "pdf_error_details": "Technische Details",
@@ -242,6 +252,16 @@ TRANSLATIONS: dict[Lang, dict[str, str]] = {
             "Minimal: quiet, typography-only hierarchy. "
             "Structured: primary accent line under the weekday row, weekend tint, soft card outline (default). "
             "Balanced: weekend tint, clear divider without accent color."
+        ),
+        "pdf_colorscheme_label": "Color scheme",
+        "pdf_colorscheme_color": "Color",
+        "pdf_colorscheme_grayscale": "Grayscale",
+        "pdf_colorscheme_monochrome": "Monochrome",
+        "pdf_colorscheme_hint": (
+            "Color: original colors (default). "
+            "Grayscale & monochrome are meant for black-and-white printers: "
+            "each activity gets its own clearly distinguishable tone — "
+            "grayscale in gray, monochrome in shades of blue."
         ),
         "pdf_modern_failed": "Could not generate modern PDF.",
         "pdf_export_failed": "Could not generate PDF.",

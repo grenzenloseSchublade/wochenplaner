@@ -91,7 +91,11 @@ def build_week_template_vars(ctx: PdfExportContext) -> dict:
             h_pct = 100.0 * (e_clamped - s_clamped) / total_minutes
 
             # Farbe immer validieren (Fallback statt ValueError in get_text_color).
-            color_hex = validate_color(str(act.get("color", "") or ""))
+            # Farbschema-Override (grayscale/monochrome) hat Vorrang; bei "color"
+            # ist die Map leer → Originalfarbe.
+            color_hex = ctx["color_overrides"].get(act["name"]) or validate_color(
+                str(act.get("color", "") or "")
+            )
             note_s = str(act.get("note", "") or "").strip()
             ht_px_equiv = float(dur_min) * PX_PER_MIN
             want_note = bool(note_s) and inline_note_fits_block_height(ht_px_equiv)
@@ -144,4 +148,5 @@ def build_week_template_vars(ctx: PdfExportContext) -> dict:
         "continuous_horizontal_grid": ctx["continuous_horizontal_grid"],
         "paper_format": ctx["paper_format"],
         "pdf_style_theme": ctx.get("pdf_style_theme", "balanced"),
+        "color_scheme": ctx.get("color_scheme", "color"),
     }

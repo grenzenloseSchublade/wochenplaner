@@ -52,11 +52,11 @@ from plan_json import (
 from storage import ls_delete, ls_load, ls_save
 from templates import get_template_activities, get_template_names
 from utils import (
-    default_plan_title,
-    normalize_plan_note_newlines,
     Activity,
     check_overlap,
+    default_plan_title,
     get_text_color,
+    normalize_plan_note_newlines,
     shift_day,
     shift_time,
     slugify,
@@ -743,6 +743,7 @@ def main() -> None:
         ("pdf_format", "DIN-A4"),
         ("pdf_export_style", "classic"),
         ("pdf_style_theme", "balanced"),
+        ("pdf_color_scheme", "color"),
         ("pdf_continuous_hgrid", True),
         ("custom_activities", None),
         ("activity_colors", None),
@@ -1014,6 +1015,14 @@ def main() -> None:
                     format_func=lambda th: t(f"pdf_theme_{th}", lang),
                 )
                 st.caption(t("pdf_theme_hint", lang))
+            st.radio(
+                t("pdf_colorscheme_label", lang),
+                ["color", "grayscale", "monochrome"],
+                horizontal=True,
+                key="pdf_color_scheme",
+                format_func=lambda cs: t(f"pdf_colorscheme_{cs}", lang),
+            )
+            st.caption(t("pdf_colorscheme_hint", lang))
             if st.button(
                 t("generate_pdf", lang),
                 width="stretch",
@@ -1040,6 +1049,9 @@ def main() -> None:
                             continuous_horizontal_grid=continuous_horizontal_grid,
                             pdf_style_theme=st.session_state.get(
                                 "pdf_style_theme", "balanced"
+                            ),
+                            color_scheme=st.session_state.get(
+                                "pdf_color_scheme", "color"
                             ),
                         )
                         try:

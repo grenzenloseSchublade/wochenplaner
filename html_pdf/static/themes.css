@@ -87,3 +87,23 @@
   --md-grid-band-visible: 1;
   --md-footer-divider-color: var(--md-sys-color-outline-variant);
 }
+
+/*
+ * Farbschemata (unabhängig vom Stil oben). Für Ausdrucke auf Schwarz-Weiß-
+ * Druckern: neutralisieren die einzige chromatische Chrome-Quelle (Primär-
+ * akzent). Die Kachelfarben selbst werden in Python (pdf_colors.py) auf
+ * distinkte Grau-/Blautöne gesetzt und kommen inline in die Kacheln.
+ *
+ * Diese Regeln stehen am Ende des CSS-Bundles → überschreiben die Theme- und
+ * Basis-Tokens deterministisch. Werte stammen aus recolor_chrome(), damit
+ * Modern- und Klassisch-PDF denselben Ton zeigen.
+ */
+.scheme--grayscale {
+  --md-sys-color-primary: #656565;
+  --md-sys-color-tertiary: #616161;
+}
+
+.scheme--monochrome {
+  --md-sys-color-primary: #3a628f;
+  --md-sys-color-tertiary: #385f8a;
+}

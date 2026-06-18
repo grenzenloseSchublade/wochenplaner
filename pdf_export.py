@@ -15,12 +15,14 @@ from reportlab.pdfgen.canvas import Canvas
 
 from constants import PX_PER_MIN, WOCHENTAGE
 from i18n import WOCHENTAGE_KURZ_I18N, Lang, t
+from pdf_colors import recolor_chrome
 from pdf_context import PdfExportContext, build_pdf_context
 from utils import (
     Activity,
     get_secondary_text_color,
     inline_note_fits_block_height,
     plan_note_lines,
+    validate_color,
 )
 
 # Mindestdauer in Minuten, ab der der Aktivitätsname im Block erscheint (nicht nur Ecke/Kurzform)
@@ -354,6 +356,12 @@ def generate_pdf_from_context(ctx: PdfExportContext) -> bytes:
     show_axis_times = ctx["show_axis_times"]
     show_block_times = ctx["show_block_times"]
     continuous_horizontal_grid = ctx["continuous_horizontal_grid"]
+    color_scheme = ctx.get("color_scheme", "color")
+    color_overrides = ctx.get("color_overrides", {})
+
+    def chrome(hex_c: str) -> str:
+        """Chrome-Farbe (Header, Titel, Tints) gemäß Farbschema neutralisieren."""
+        return recolor_chrome(hex_c, color_scheme)
 
     page_size = landscape(A4) if paper_format == "A4" else landscape(A5)
     page_w, page_h = page_size
@@ -386,12 +394,12 @@ def generate_pdf_from_context(ctx: PdfExportContext) -> bytes:
     c.setCreator("Wochenplaner – github.com/grenzenloseSchublade/wochenplaner")
 
     # ── Hintergrund ──────────────────────────────────────────────────────────
-    c.setFillColor(HexColor("#FAFAFA"))
+    c.setFillColor(HexColor(chrome("#FAFAFA")))
     c.rect(0, 0, page_w, page_h, fill=1, stroke=0)
 
     # ── Titel ────────────────────────────────────────────────────────────────
     title_y = grid_y + grid_h + header_h + subtitle_h
-    c.setFillColor(HexColor("#2C3E50"))
+    c.setFillColor(HexColor(chrome("#2C3E50")))
     c.setFont("Helvetica-Bold", 11)
     c.drawCentredString(page_w / 2, title_y + 1.5 * mm, title)
 
@@ -409,7 +417,7 @@ def generate_pdf_from_context(ctx: PdfExportContext) -> bytes:
     short_days = WOCHENTAGE_KURZ_I18N[lang]
     for i, tag in enumerate(short_days):
         x = grid_x + i * col_w
-        bg = HexColor("#4472C4") if i < 5 else HexColor("#2E86AB")
+        bg = HexColor(chrome("#4472C4")) if i < 5 else HexColor(chrome("#2E86AB"))
         c.setFillColor(bg)
         c.rect(x, header_y, col_w, header_h, fill=1, stroke=0)
         c.setFillColor(white)
@@ -417,7 +425,7 @@ def generate_pdf_from_context(ctx: PdfExportContext) -> bytes:
         c.drawCentredString(x + col_w / 2, header_y + header_h / 2 - 1.5, tag)
 
     # ── Spalten-Hintergrund (abwechselnd) ────────────────────────────────────
-    alt_colors = ["#FFFFFF", "#F8F9FF"]
+    alt_colors = [chrome("#FFFFFF"), chrome("#F8F9FF")]
     for i in range(7):
         c.setFillColor(HexColor(alt_colors[i % 2]))
         c.rect(grid_x + i * col_w, grid_y, col_w, grid_h, fill=1, stroke=0)
@@ -504,7 +512,9 @@ def generate_pdf_from_context(ctx: PdfExportContext) -> bytes:
         y = grid_y + grid_h - (offset + (e_clamped - s_clamped)) * pt_per_min
         w = col_w - 2
 
-        color_hex = act.get("color", "#F3E5AB")
+        color_hex = color_overrides.get(act["name"]) or validate_color(
+            str(act.get("color", "") or "")
+        )
         c.setFillColor(_hex_to_color(color_hex))
         c.setStrokeColor(HexColor("#999999"))
         c.setLineWidth(0.4)

@@ -32,6 +32,16 @@ Ab **v1.5.0** gibt es **zwei PDF-Modi** in der Sidebar unter „PDF erzeugen“:
 
 Die Zeitachse ist **links prominent** mit eigenem Hintergrund, **rechts leise** als Zweitorientierung (auf A4); bei **A5 wird die rechte Achse ausgeblendet**, um mehr Platz für die Blöcke zu gewinnen.
 
+**Farbschema** (Sidebar → „Farbschema", gilt für **Klassisch *und* Modern**):
+
+| Schema | Zweck |
+|--------|-------|
+| **Farbig** *(Standard)* | Originalfarben der Aktivitäten |
+| **Graustufen** | für **Schwarz-Weiß-Ausdrucke**: jede Aktivität bekommt eine eigene, klar getrennte **Graustufe** |
+| **Monochrom** | wie Graustufen, aber in **Blautönen** einer Grundfarbe |
+
+Beide S/W-Schemata vergeben **distinkte Tonstufen pro Aktivität** (gleicher Name = gleicher Ton), damit Termine auf einem Schwarz-Weiß-Drucker unterscheidbar bleiben statt zu einheitlichem Grau zu verschmelzen.
+
 **Ausrichtung im Raster:** Kacheln sind **links** (`text-align: start`) ausgerichtet; die **Stundenachsen** links/rechts sind bewusst **innen** zum Raster hin orientiert (Leserichtung), nicht zwingend zur Papierkante. Der **Footer** ist zentriert.
 
 **Streamlit Community Cloud** stellt oft **keinen** vollständigen Chromium-Stack bereit: dort bei Problemen den **klassischen** Modus nutzen.
@@ -98,6 +108,7 @@ Empfehlung: Für öffentliche Deployments **Klassisch** belassen; Modern-PDF lok
 |---|---|---|
 | **Proportionale Zeitblöcke** | 4h-Block doppelt so groß wie 2h | 4h block twice as tall as 2h |
 | **PDF-Export (kostenlos)** | Klassisch **oder** Modern (HTML, Playwright); DIN A4 / A5 Quer | Classic **or** modern (HTML, Playwright); DIN A4 / A5 landscape |
+| **PDF-Farbschema** | Farbig, Graustufen, Monochrom (für S/W-Druck) | Color, grayscale, monochrome (for B/W printing) |
 | **CSV-Export** | Für Excel / Google Sheets | For Excel / Google Sheets |
 | **Notizen (pro Eintrag)** | 2-zeilige Notiz pro Aktivität, sichtbar im Kontextmenü | 2-line note per activity, visible in context menu |
 | **Notizen (Plan-Ebene)** | Mehrzeilige Notiz für den gesamten Wochenplan | Multi-line note for the whole week |

@@ -8,6 +8,7 @@ from jinja2 import Environment, FileSystemLoader, select_autoescape
 from playwright.sync_api import Error as PlaywrightError
 from playwright.sync_api import sync_playwright
 
+from pdf_colors import ALLOWED_COLOR_SCHEMES, DEFAULT_COLOR_SCHEME
 from pdf_context import PdfExportContext
 
 from .layout import build_week_template_vars
@@ -82,6 +83,18 @@ def _normalize_pdf_theme(theme: str) -> str:
     return val
 
 
+def _normalize_color_scheme(scheme: str) -> str:
+    """Validiert das Farbschema auf eine Whitelist."""
+    val = str(scheme or "").strip().lower()
+    if val not in ALLOWED_COLOR_SCHEMES:
+        msg = (
+            f"color_scheme muss einer von {sorted(ALLOWED_COLOR_SCHEMES)} sein, "
+            f"erhalten: {scheme!r}"
+        )
+        raise ValueError(msg)
+    return val
+
+
 """
 Papierformate in Millimeter (quer / landscape). Werden genutzt, um den
 Browser-Viewport exakt auf die spätere Druckseite zu setzen – sonst
@@ -143,5 +156,6 @@ def render_html_pdf(ctx: PdfExportContext) -> bytes:
     # Früh validieren: Fehlermeldung kommt so oder so vor dem Browser-Start.
     _normalize_paper_format(ctx["paper_format"])
     _normalize_pdf_theme(ctx.get("pdf_style_theme", DEFAULT_PDF_THEME))
+    _normalize_color_scheme(ctx.get("color_scheme", DEFAULT_COLOR_SCHEME))
     html = build_week_html(ctx)
     return _pdf_playwright(html, ctx["paper_format"])
