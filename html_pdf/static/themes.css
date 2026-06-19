@@ -107,3 +107,29 @@
   --md-sys-color-primary: #3a628f;
   --md-sys-color-tertiary: #385f8a;
 }
+
+/*
+ * Renderer-spezifische Overrides für WeasyPrint (browserlos).
+ *
+ * `.grid-bands` (absolut positionierter Stunden-Band-Overlay) wird AUSGEBLENDET:
+ * WeasyPrints CSS-Grid-Implementierung bezieht dieses absolute Kind
+ * fälschlich in die Spalten-Track-Berechnung ein und bläht dadurch die feste
+ * `9mm`-Achsenspalte zu einer `1fr`-Breite auf → Kopfzeile und Raster geraten
+ * um eine Spalte auseinander. Ohne `.grid-bands` richtet sich das Raster exakt
+ * aus. Verlust: nur der ≤4 %-Stundenband-Tint; die Stundenlinien
+ * (`.day-col-overlay`) bleiben erhalten. Chromium ist unberührt (volle Treue,
+ * inkl. Bänder mit `mix-blend-mode`, das WeasyPrint ohnehin nicht kann).
+ */
+.render--weasyprint .grid-bands {
+  display: none;
+}
+
+/*
+ * `min-height: 100vh` ist ein Browser-Viewport-Konzept; in WeasyPrint führt es
+ * zu Überlauf auf eine zweite Seite. Die vertikale Geometrie des Rasters steckt
+ * ohnehin in festen `--grid-h`-Höhen, daher kann die feste Mindesthöhe hier
+ * entfallen, ohne das Layout zu verändern.
+ */
+.render--weasyprint .sheet {
+  min-height: 0;
+}

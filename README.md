@@ -16,11 +16,18 @@ Ab **v1.5.0** gibt es **zwei PDF-Modi** in der Sidebar unter „PDF erzeugen“:
 | Modus | Technik | Hinweis |
 |-------|---------|---------|
 | **Klassisch** | ReportLab (wie bisher) | PDF-Text-Annotations für Eintrag-Notizen, kein Extra-Setup |
-| **Modern (HTML)** | Jinja2 + CSS + **Playwright** (headless Chromium) | Material-Design-ähnliches Layout, Schrift **Roboto** (WOFF2, [Apache-2.0](https://www.apache.org/licenses/LICENSE-2.0.html), Dateien via [@fontsource-Quellen](https://www.npmjs.com/package/@fontsource/roboto)). |
+| **Modern (HTML)** | Jinja2 + CSS, gerendert mit **Chromium** *oder* **WeasyPrint** (Auto-Fallback) | Material-Design-ähnliches Layout, Schrift **Roboto** (WOFF2, [Apache-2.0](https://www.apache.org/licenses/LICENSE-2.0.html), Dateien via [@fontsource-Quellen](https://www.npmjs.com/package/@fontsource/roboto)). |
 
 **Standard-Einstellungen:** PDF-Export **Klassisch**, Option **Zeitlinien über Terminen** (horizontales Raster) **ein**, bei Modern-PDF der Stil **Ausgewogen**.
 
-**Modern-PDF:** nach `uv sync` einmal `uv run playwright install chromium`. Unter Linux braucht Chromium typisch Systembibliotheken (z. B. `libatk`, `libgbm` – im **Devcontainer** sind sie im `Dockerfile` und `post-create.sh` abgedeckt).
+**Modern-PDF – zwei Render-Backends mit automatischem Fallback:**
+
+| Backend | Wann genutzt | Setup |
+|---------|--------------|-------|
+| **Chromium** (Playwright) | wenn ein Browser-Binary vorhanden ist (höchste Pixeltreue) | einmalig `uv run playwright install chromium`; Linux braucht Systembibliotheken (`libatk`, `libgbm` …) |
+| **WeasyPrint** | **automatisch**, wenn kein Chromium startet (z. B. **Streamlit Community Cloud**) – browserlos, ~90–95 % Layout-Treue | nur `apt`-Libs (`libpango`, `libcairo` …), liegen in [`packages.txt`](packages.txt); kein Browser-Download |
+
+`render_html_pdf` versucht zuerst Chromium und fällt bei dessen Abwesenheit automatisch auf WeasyPrint zurück. Erzwingen über die Umgebungsvariable `WP_PDF_RENDERER=chromium|weasyprint`.
 
 **Modern-PDF: drei wählbare Stile** (Sidebar → „PDF-Stil (Modern)"):
 
@@ -44,7 +51,7 @@ Beide S/W-Schemata vergeben **distinkte Tonstufen pro Aktivität** (gleicher Nam
 
 **Ausrichtung im Raster:** Kacheln sind **links** (`text-align: start`) ausgerichtet; die **Stundenachsen** links/rechts sind bewusst **innen** zum Raster hin orientiert (Leserichtung), nicht zwingend zur Papierkante. Der **Footer** ist zentriert.
 
-**Streamlit Community Cloud** stellt oft **keinen** vollständigen Chromium-Stack bereit: dort bei Problemen den **klassischen** Modus nutzen.
+**Streamlit Community Cloud** stellt **keinen** Chromium-Stack bereit – dort rendert Modern-PDF automatisch über **WeasyPrint** (siehe Deployment-Abschnitt). Der **Klassisch**-Modus bleibt jederzeit als Fallback verfügbar.
 
 ---
 
@@ -71,13 +78,13 @@ Opens http://localhost:8501 in your browser automatically.
 3. Main file: `app.py`
 4. Fertig – `uv.lock` und `.python-version` werden automatisch erkannt
 
-**Modern-PDF** (Playwright/Chromium) ist dort **standardmäßig nicht nutzbar**, weil Streamlit Community Cloud **keine** Browser-Binaries vorinstalliert. Endnutzer sollten in der Sidebar **Klassisch** wählen.
+**Modern-PDF funktioniert auf Streamlit Community Cloud out-of-the-box über den browserlosen WeasyPrint-Fallback:** Die nötigen Systembibliotheken liegen bereits in [`packages.txt`](packages.txt), und `render_html_pdf` fällt automatisch auf WeasyPrint zurück, weil dort kein Chromium startet. Kein Browser-Download, kein Kaltstart-Overhead. Der **Klassisch**-Modus bleibt als robuster Fallback verfügbar.
 
-#### Optional: Modern-PDF doch auf Streamlit Community Cloud (experimentell)
+#### Optional: volle Chromium-Pixeltreue auf Streamlit Community Cloud (experimentell)
 
-Wer Modern-PDF auf Streamlit Community Cloud erzwingen will, kann folgenden Weg versuchen – **offiziell nicht unterstützt**, Risiken im Abschnitt unten:
+WeasyPrint deckt ~90–95 % des Modern-Layouts ab. Wer die **volle** Chromium-Treue erzwingen will, kann folgenden Weg versuchen – **offiziell nicht unterstützt**, Risiken im Abschnitt unten:
 
-1. **Chromium-Systembibliotheken** via `packages.txt` im Repo-Root installieren lassen. **Wichtig:** In `packages.txt` dürfen **nur** Debian-Paketnamen stehen, **genau eine Zeile pro Paket** – keine Kommentare, keine erklärenden Sätze (Community Cloud wertet die Datei wie eine Paketliste aus; Text würde den Build zerstören). Eine kopierbare Paketliste liegt in [`packages.modern-pdf.example.txt`](packages.modern-pdf.example.txt); Inhalt bei Bedarf nach `packages.txt` übernehmen.
+1. **Chromium-Systembibliotheken** via `packages.txt` im Repo-Root installieren lassen – **zusätzlich** zu den dort bereits eingetragenen WeasyPrint-Libs. **Wichtig:** In `packages.txt` dürfen **nur** Debian-Paketnamen stehen, **genau eine Zeile pro Paket** – keine Kommentare, keine erklärenden Sätze (Community Cloud wertet die Datei wie eine Paketliste aus; Text würde den Build zerstören). Eine kopierbare Chromium-Paketliste liegt in [`packages.modern-pdf.example.txt`](packages.modern-pdf.example.txt); Zeilen bei Bedarf an `packages.txt` anhängen. Den Renderer dann via `WP_PDF_RENDERER=chromium` erzwingen.
 2. **Playwright-Browser** beim App-Start einmalig herunterladen. Dazu früh in `app.py` (vor dem ersten Modern-PDF-Export) z. B. bootstrap-mäßig ausführen:
 
    ```python

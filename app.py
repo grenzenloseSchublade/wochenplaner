@@ -92,20 +92,13 @@ def _base_color_map() -> dict[str, str]:
 
 def _save_user_prefs() -> None:
     """Persist user-specific preferences (custom names + color map)."""
-    _ls_counter = st.session_state.get("_ls_wc", 0) + 1
-    st.session_state._ls_wc = _ls_counter
     ls_save(
         "custom_activities",
         json.dumps(st.session_state.custom_activities, ensure_ascii=False),
-        f"custom_{_ls_counter}",
     )
-
-    _ls_counter += 1
-    st.session_state._ls_wc = _ls_counter
     ls_save(
         "activity_colors",
         json.dumps(st.session_state.activity_colors, ensure_ascii=False),
-        f"colors_{_ls_counter}",
     )
 
 
@@ -177,9 +170,17 @@ def _sync_pdf_title_note_widgets() -> None:
 def decode_plan(data: str) -> list[Activity] | None:
     """Decode a shared plan from URL parameter."""
     try:
+        # Eingabelänge begrenzen, bevor überhaupt dekomprimiert wird.
+        if len(data) > 200_000:
+            return None
         compressed = base64.urlsafe_b64decode(data)
-        raw = zlib.decompress(compressed, wbits=15, bufsize=1_000_000)
-        if len(raw) > 1_000_000:
+        # Hartes Dekompressions-Limit: decompressobj stoppt bei max_length Bytes.
+        # `bufsize` von zlib.decompress wäre KEIN Limit (nur ein Größenhinweis)
+        # und ließe „zip-Bomben" via öffentlichem ?plan=-Parameter komplett
+        # in den Speicher expandieren.
+        dec = zlib.decompressobj(wbits=15)
+        raw = dec.decompress(compressed, 1_000_000)
+        if dec.unconsumed_tail:
             return None
         items = json.loads(raw)
         if isinstance(items, list):
@@ -201,9 +202,7 @@ def save_activities(a: list[Activity], fp: Path | None = None) -> None:
     except OSError:
         pass  # Cloud: filesystem may be ephemeral
     if fp == DATA_FILE:
-        _ls_counter = st.session_state.get("_ls_wc", 0) + 1
-        st.session_state._ls_wc = _ls_counter
-        ls_save("activities", payload, f"save_{_ls_counter}")
+        ls_save("activities", payload)
 
 
 def _sort_activities(acts: list[Activity]) -> list[Activity]:
@@ -386,6 +385,9 @@ def _delete_all_activities() -> None:
     st.session_state.activities = []
     st.session_state.edit_mode = None
     save_activities([])
+    # Bestätigungs-Checkbox zurücksetzen, sonst bleibt sie über Reruns angehakt
+    # und die Sicherheitsabfrage wäre beim nächsten Mal ausgehebelt.
+    st.session_state.pop("chk_del_all", None)
     _reset_form_keys()
 
 
@@ -404,6 +406,11 @@ def _duplicate_activity(act_id: str) -> None:
             )
             st.session_state.activities.append(dup)
             st.session_state.activity_colors[a["name"]] = validate_color(a["color"])
+            if (
+                a["name"] not in AKTIVITAETEN_FARBEN
+                and a["name"] not in st.session_state.custom_activities
+            ):
+                st.session_state.custom_activities.append(a["name"])
             save_activities(st.session_state.activities)
             _save_user_prefs()
             break
@@ -418,12 +425,8 @@ def _new_plan() -> None:
     st.session_state["_pending_pdf_widget_resync"] = True
     save_activities([])
     _reset_form_keys()
-    _ls_counter = st.session_state.get("_ls_wc", 0) + 1
-    st.session_state._ls_wc = _ls_counter
-    ls_delete("title", f"del_title_{_ls_counter}")
-    _ls_counter += 1
-    st.session_state._ls_wc = _ls_counter
-    ls_delete("plan_note", f"del_pnote_{_ls_counter}")
+    ls_delete("title")
+    ls_delete("plan_note")
 
 
 # ── Activity form fragment ───────────────────────────────────────────────────
@@ -748,7 +751,6 @@ def main() -> None:
         ("custom_activities", None),
         ("activity_colors", None),
         ("lang", "de"),
-        ("_ls_wc", 0),
     ]
     _disk_load = None
     for k, v in _defaults:
@@ -777,7 +779,7 @@ def main() -> None:
 
     # ── Restore from LocalStorage (Cloud fallback) ───────────────────────────
     if not st.session_state.activities and "ls_checked" not in st.session_state:
-        ls_data = ls_load("activities", "init_load")
+        ls_data = ls_load("activities")
         if ls_data:
             valid = activities_from_local_storage_json(ls_data)
             if valid is not None:
@@ -786,7 +788,7 @@ def main() -> None:
 
     # ── Restore language from LocalStorage ───────────────────────────────────
     if "ls_lang_checked" not in st.session_state:
-        ls_lang = ls_load("lang", "init_lang")
+        ls_lang = ls_load("lang")
         if ls_lang and ls_lang in ("de", "en"):
             st.session_state.lang = ls_lang
         st.session_state.ls_lang_checked = True
@@ -794,7 +796,7 @@ def main() -> None:
     # ── Restore title from LocalStorage ──────────────────────────────────────
     if "ls_title_checked" not in st.session_state:
         if not st.session_state.get("_disk_title_from_file"):
-            ls_title = ls_load("title", "init_title")
+            ls_title = ls_load("title")
             if ls_title and isinstance(ls_title, str) and ls_title.strip():
                 st.session_state.plan_title = ls_title
         st.session_state.ls_title_checked = True
@@ -802,7 +804,7 @@ def main() -> None:
     # ── Restore plan note from LocalStorage ──────────────────────────────────
     if "ls_plan_note_checked" not in st.session_state:
         if not st.session_state.get("_disk_note_from_file"):
-            ls_pn = ls_load("plan_note", "init_plan_note")
+            ls_pn = ls_load("plan_note")
             if ls_pn and isinstance(ls_pn, str):
                 st.session_state.plan_note = ls_pn
         st.session_state.ls_plan_note_checked = True
@@ -810,7 +812,7 @@ def main() -> None:
 
     # ── Restore user prefs from LocalStorage ────────────────────────────────
     if "ls_prefs_checked" not in st.session_state:
-        ls_custom = ls_load("custom_activities", "init_custom")
+        ls_custom = ls_load("custom_activities")
         if ls_custom:
             try:
                 items = json.loads(ls_custom)
@@ -827,7 +829,7 @@ def main() -> None:
             except (json.JSONDecodeError, TypeError):
                 pass
 
-        ls_colors = ls_load("activity_colors", "init_colors")
+        ls_colors = ls_load("activity_colors")
         if ls_colors:
             try:
                 items = json.loads(ls_colors)
@@ -869,7 +871,15 @@ def main() -> None:
 
     lang: Lang = st.session_state.lang
     acts: list[Activity] = st.session_state.activities
-    _sync_prefs_from_activities(acts)
+    # Nur synchronisieren, wenn sich Namen/Farben tatsächlich geändert haben –
+    # statt bei jedem Rerun über die volle Liste zu iterieren (und ggf. Saves
+    # auszulösen). Signatur deckt Name + Farbe pro Aktivität ab.
+    _prefs_sig = tuple(
+        (a.get("name", ""), a.get("color", "")) for a in acts
+    )
+    if st.session_state.get("_prefs_sig") != _prefs_sig:
+        _sync_prefs_from_activities(acts)
+        st.session_state._prefs_sig = _prefs_sig
 
     # Nach JSON-Import / „Neuer Plan“: Widget-Keys erst hier löschen (vor Sidebar),
     # nicht direkt nach Import – dort wären PDF-Widgets schon instanziiert.
@@ -889,8 +899,7 @@ def main() -> None:
         )
         if new_lang != lang:
             st.session_state.lang = new_lang
-            st.session_state._ls_wc += 1
-            ls_save("lang", new_lang, f"lang_{st.session_state._ls_wc}")
+            ls_save("lang", new_lang)
             _reset_form_keys()
             st.rerun()
         lang = st.session_state.lang
@@ -947,9 +956,7 @@ def main() -> None:
             )
             if _new_title != st.session_state.plan_title:
                 st.session_state.plan_title = _new_title
-                _ls_counter = st.session_state.get("_ls_wc", 0) + 1
-                st.session_state._ls_wc = _ls_counter
-                ls_save("title", _new_title, f"title_{_ls_counter}")
+                ls_save("title", _new_title)
 
             _new_plan_note = st.text_area(
                 t("plan_note", lang),
@@ -962,9 +969,7 @@ def main() -> None:
             _new_plan_note = normalize_plan_note_newlines(_new_plan_note)
             if _new_plan_note != st.session_state.plan_note:
                 st.session_state.plan_note = _new_plan_note
-                _ls_counter = st.session_state.get("_ls_wc", 0) + 1
-                st.session_state._ls_wc = _ls_counter
-                ls_save("plan_note", _new_plan_note, f"pnote_{_ls_counter}")
+                ls_save("plan_note", _new_plan_note)
 
             fmt = st.radio(
                 t("format", lang),
@@ -1003,9 +1008,8 @@ def main() -> None:
                     if m == "classic"
                     else t("pdf_style_modern", lang)
                 ),
+                help=t("pdf_style_hint", lang),
             )
-            st.caption(t("pdf_style_hint", lang))
-            st.caption(t("pdf_modern_hosting_note", lang))
             if st.session_state.get("pdf_export_style") == "modern_html":
                 st.radio(
                     t("pdf_theme_label", lang),
@@ -1013,16 +1017,16 @@ def main() -> None:
                     horizontal=True,
                     key="pdf_style_theme",
                     format_func=lambda th: t(f"pdf_theme_{th}", lang),
+                    help=t("pdf_theme_hint", lang),
                 )
-                st.caption(t("pdf_theme_hint", lang))
             st.radio(
                 t("pdf_colorscheme_label", lang),
                 ["color", "grayscale", "monochrome"],
                 horizontal=True,
                 key="pdf_color_scheme",
                 format_func=lambda cs: t(f"pdf_colorscheme_{cs}", lang),
+                help=t("pdf_colorscheme_hint", lang),
             )
-            st.caption(t("pdf_colorscheme_hint", lang))
             if st.button(
                 t("generate_pdf", lang),
                 width="stretch",
@@ -1163,24 +1167,12 @@ def main() -> None:
                                         _sync_prefs_from_activities(_to_save)
                                         save_activities(_to_save)
                                         if tit_upd is not None:
-                                            _ls_counter = (
-                                                st.session_state.get("_ls_wc", 0) + 1
-                                            )
-                                            st.session_state._ls_wc = _ls_counter
                                             ls_save(
-                                                "title",
-                                                st.session_state.plan_title,
-                                                f"import_title_{_ls_counter}",
+                                                "title", st.session_state.plan_title
                                             )
                                         if note_upd is not None:
-                                            _ls_counter = (
-                                                st.session_state.get("_ls_wc", 0) + 1
-                                            )
-                                            st.session_state._ls_wc = _ls_counter
                                             ls_save(
-                                                "plan_note",
-                                                st.session_state.plan_note,
-                                                f"import_note_{_ls_counter}",
+                                                "plan_note", st.session_state.plan_note
                                             )
                                         _reset_form_keys()
                                         st.toast(
@@ -1284,7 +1276,6 @@ def main() -> None:
             json.dumps(acts, ensure_ascii=False),
             START_HOUR,
             END_HOUR,
-            _today=datetime.now().strftime("%Y-%m-%d"),
             lang=lang,
             editing_id=_editing_id,
             component_mode=True,

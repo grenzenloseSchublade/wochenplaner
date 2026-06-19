@@ -537,7 +537,7 @@ def generate_pdf_from_context(ctx: PdfExportContext) -> bytes:
                     "start_str": start_display,
                     "dur_min": dur_min,
                     "max_text_w": max_text_w,
-                    "note": act.get("note", "").strip(),
+                    "note": str(act.get("note", "") or "").strip(),
                     "bg_hex": color_hex,
                 }
             )
@@ -558,7 +558,7 @@ def generate_pdf_from_context(ctx: PdfExportContext) -> bytes:
                 block_color_hex=str(color_hex),
             )
 
-            note_text = act.get("note", "").strip()
+            note_text = str(act.get("note", "") or "").strip()
             if note_text:
                 ann_s = 10
                 ann_x = x + w - ann_s - 1
@@ -643,9 +643,13 @@ def generate_pdf(
     *,
     show_axis_times: bool = True,
     show_block_times: bool = True,
-    continuous_horizontal_grid: bool = False,
+    continuous_horizontal_grid: bool = True,
 ) -> bytes:
-    """Kompatibilitäts-API: baut Context und rendert klassisches PDF."""
+    """Kompatibilitäts-API: baut Context und rendert klassisches PDF.
+
+    Default `continuous_horizontal_grid=True` an `build_pdf_context` und den
+    App-Default angeglichen (vorher abweichend `False`).
+    """
     ctx = build_pdf_context(
         activities,
         paper_format=paper_format,

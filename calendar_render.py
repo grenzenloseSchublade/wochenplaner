@@ -98,14 +98,16 @@ def _ctx_menu_js(edit_label: str, component_mode: bool = False) -> str:
         "  ev.stopPropagation();hideCtx();"
         "  var m=document.createElement('div');"
         "  m.className='ctx-menu';"
+        "  function esc(x){return (x||'').replace(/&/g,'&amp;')"
+        ".replace(/</g,'&lt;').replace(/>/g,'&gt;');}"
         "  var c=el.getAttribute('data-color')||'#ccc';"
         "  var noteText=el.getAttribute('data-note')||'';"
-        "  var noteHtml=noteText?'<div class=\"ctx-note\">'+noteText.replace(/</g,'&lt;')+'</div>':'';"
+        "  var noteHtml=noteText?'<div class=\"ctx-note\">'+esc(noteText)+'</div>':'';"
         "  m.innerHTML='"
         '<div class="ctx-dot" style="background:\'+c+\'"></div>\''
-        "+'<div class=\"ctx-name\">'+el.getAttribute('data-name')+'</div>'"
-        "+'<div class=\"ctx-time\">'+el.getAttribute('data-day')"
-        "+' · '+el.getAttribute('data-start')+'\\u2013'+el.getAttribute('data-end')+'</div>'"
+        "+'<div class=\"ctx-name\">'+esc(el.getAttribute('data-name'))+'</div>'"
+        "+'<div class=\"ctx-time\">'+esc(el.getAttribute('data-day'))"
+        "+' · '+esc(el.getAttribute('data-start'))+'\\u2013'+esc(el.getAttribute('data-end'))+'</div>'"
         "+noteHtml"
         '+\'<a class="ctx-edit" href="#">' + edit_label + "</a>';"
         "  var r=el.getBoundingClientRect();"
@@ -205,7 +207,6 @@ def render_calendar(
     activities_json: str,
     sh: int,
     eh: int,
-    _today: str = "",
     lang: Lang = "de",
     editing_id: str = "",
     component_mode: bool = False,

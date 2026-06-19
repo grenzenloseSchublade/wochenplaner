@@ -95,32 +95,24 @@ TRANSLATIONS: dict[Lang, dict[str, str]] = {
         "pdf_style_classic": "Klassisch (ReportLab)",
         "pdf_style_modern": "Modern (Kalenderlayout)",
         "pdf_style_hint": (
-            "Klassisch: kompaktes PDF mit ReportLab; Eintrag-Notizen zusätzlich als klickbare Hinweise. "
-            "Modern: farbiges Wochenraster wie in der App (HTML/CSS)."
-        ),
-        "pdf_modern_hosting_note": (
-            "Hinweis: Modern-PDF braucht auf dem Server einen Browser (Chromium). "
-            "**Auf Streamlit Community Cloud funktioniert Modern-PDF in der Regel nicht** – dort bitte **Klassisch** wählen. "
-            "Lokal oder self-hosted: siehe README."
+            "Klassisch: kompaktes PDF (ReportLab). "
+            "Modern: farbiges Wochenraster wie in der App."
         ),
         "pdf_theme_label": "PDF-Stil (Modern)",
         "pdf_theme_minimal": "Minimal",
         "pdf_theme_structured": "Strukturiert",
         "pdf_theme_balanced": "Ausgewogen",
         "pdf_theme_hint": (
-            "Minimal: ruhig, nur Typografie-Hierarchie. "
-            "Strukturiert: Primärlinie unter der Wochentagsleiste, Wochenend-Tint, weiche Card-Umrandung (Standard). "
-            "Ausgewogen: Wochenend-Tint, klare Trennlinie ohne Akzentfarbe."
+            "Minimal: nur Typografie. Strukturiert: Akzentlinie + Card-Rahmen. "
+            "Ausgewogen: dezente Trennlinie ohne Akzentfarbe."
         ),
         "pdf_colorscheme_label": "Farbschema",
         "pdf_colorscheme_color": "Farbig",
         "pdf_colorscheme_grayscale": "Graustufen",
         "pdf_colorscheme_monochrome": "Monochrom",
         "pdf_colorscheme_hint": (
-            "Farbig: Originalfarben (Standard). "
-            "Graustufen & Monochrom sind für Ausdrucke auf Schwarz-Weiß-Druckern gedacht: "
-            "jede Aktivität bekommt eine eigene, klar unterscheidbare Tonstufe – "
-            "Graustufen in Grau, Monochrom in Blautönen."
+            "Farbig: Originalfarben. Graustufen/Monochrom: je Aktivität eine "
+            "eigene Tonstufe – für Schwarz-Weiß-Druck."
         ),
         "pdf_modern_failed": "Modern-PDF konnte nicht erzeugt werden.",
         "pdf_export_failed": "PDF konnte nicht erzeugt werden.",
@@ -236,32 +228,24 @@ TRANSLATIONS: dict[Lang, dict[str, str]] = {
         "pdf_style_classic": "Classic (ReportLab)",
         "pdf_style_modern": "Modern (calendar layout)",
         "pdf_style_hint": (
-            "Classic: compact ReportLab PDF; activity notes also as clickable markers. "
-            "Modern: colored week grid like the app (HTML/CSS)."
-        ),
-        "pdf_modern_hosting_note": (
-            "Note: Modern PDF needs a server-side browser (Chromium). "
-            "**On Streamlit Community Cloud, Modern PDF usually does not work** — please choose **Classic** there. "
-            "Local or self-hosted: see README."
+            "Classic: compact PDF (ReportLab). "
+            "Modern: colored week grid like the app."
         ),
         "pdf_theme_label": "PDF style (Modern)",
         "pdf_theme_minimal": "Minimal",
         "pdf_theme_structured": "Structured",
         "pdf_theme_balanced": "Balanced",
         "pdf_theme_hint": (
-            "Minimal: quiet, typography-only hierarchy. "
-            "Structured: primary accent line under the weekday row, weekend tint, soft card outline (default). "
-            "Balanced: weekend tint, clear divider without accent color."
+            "Minimal: typography only. Structured: accent line + card outline. "
+            "Balanced: subtle divider, no accent color."
         ),
         "pdf_colorscheme_label": "Color scheme",
         "pdf_colorscheme_color": "Color",
         "pdf_colorscheme_grayscale": "Grayscale",
         "pdf_colorscheme_monochrome": "Monochrome",
         "pdf_colorscheme_hint": (
-            "Color: original colors (default). "
-            "Grayscale & monochrome are meant for black-and-white printers: "
-            "each activity gets its own clearly distinguishable tone — "
-            "grayscale in gray, monochrome in shades of blue."
+            "Color: original colors. Grayscale/monochrome: one distinct tone "
+            "per activity – for black-and-white printing."
         ),
         "pdf_modern_failed": "Could not generate modern PDF.",
         "pdf_export_failed": "Could not generate PDF.",

@@ -26,7 +26,7 @@ class Activity(TypedDict):
 
 
 _HEX_COLOR_RE = re.compile(r"^#[0-9a-fA-F]{6}$")
-_TIME_RE = re.compile(r"^\d{2}:\d{2}$")
+_TIME_RE = re.compile(r"^([01]\d|2[0-3]):[0-5]\d$")
 
 _REQUIRED_KEYS = {"id", "name", "day", "start", "end", "color"}
 _BR_TAG_RE = re.compile(r"<br\s*/?>", re.IGNORECASE)

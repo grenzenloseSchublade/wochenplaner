@@ -1,7 +1,19 @@
-"""HTML → PDF: Playwright (headless Chromium)."""
+"""HTML → PDF.
+
+Zwei browserbasierte/-lose Backends mit **Auto-Fallback**:
+
+- ``chromium`` – Playwright/headless Chromium (höchste Pixeltreue, braucht ein
+  lokales Browser-Binary; auf Streamlit Community Cloud i. d. R. nicht verfügbar).
+- ``weasyprint`` – reine Python-Lib (+ pango/cairo-Systembibliotheken), **kein**
+  Browser, Cloud-tauglich; ~90–95 % Layout-Treue.
+
+`render_html_pdf` wählt automatisch: Chromium, wenn startbar, sonst WeasyPrint.
+Erzwingbar über die Umgebungsvariable ``WP_PDF_RENDERER=chromium|weasyprint``.
+"""
 
 from __future__ import annotations
 
+import os
 from pathlib import Path
 
 from jinja2 import Environment, FileSystemLoader, select_autoescape
@@ -21,11 +33,18 @@ ALLOWED_PAPER_FORMATS: frozenset[str] = frozenset({"A4", "A5"})
 ALLOWED_PDF_THEMES: frozenset[str] = frozenset({"minimal", "structured", "balanced"})
 DEFAULT_PDF_THEME = "balanced"
 
+ALLOWED_RENDERERS: frozenset[str] = frozenset({"chromium", "weasyprint"})
+_RENDERER_ENV = "WP_PDF_RENDERER"
+
 _CHROMIUM_MISSING_MSG = (
     "Chromium für Playwright wurde nicht gefunden. "
-    "Lokal einmalig ausführen: `uv run playwright install chromium`. "
-    "Auf Streamlit Community Cloud funktioniert Modern-PDF meist nicht – "
-    "dort bitte den Klassisch-Modus nutzen (siehe README)."
+    "Lokal einmalig ausführen: `uv run playwright install chromium`."
+)
+
+_WEASYPRINT_MISSING_MSG = (
+    "WeasyPrint (oder seine Systembibliotheken pango/cairo) wurde nicht gefunden. "
+    "Lokal: `uv sync` und die Pango/Cairo-Libs installieren (siehe README / "
+    "packages.txt). Alternativ den Klassisch-Modus nutzen."
 )
 
 
@@ -47,10 +66,13 @@ def _css_bundle_for_pdf() -> str:
     return f"{tokens}\n{typo}\n{rest}\n{themes}"
 
 
-def build_week_html(ctx: PdfExportContext) -> str:
-    """Rendert das Wochen-HTML für Playwright."""
+def build_week_html(ctx: PdfExportContext, renderer: str = "chromium") -> str:
+    """Rendert das Wochen-HTML; `renderer` setzt die Body-Klasse `render--*`
+    für backend-spezifische CSS-Overrides (z. B. WeasyPrint kann kein
+    `mix-blend-mode`)."""
     data = build_week_template_vars(ctx)
     data["css_bundle"] = _css_bundle_for_pdf()
+    data["pdf_renderer"] = renderer if renderer in ALLOWED_RENDERERS else "chromium"
     env = Environment(
         loader=FileSystemLoader(_TEMPLATES),
         autoescape=select_autoescape(["html", "xml"]),
@@ -151,11 +173,37 @@ def _pdf_playwright(html: str, paper_format: str) -> bytes:
             browser.close()
 
 
+def _pdf_weasyprint(html: str, paper_format: str) -> bytes:
+    """Browserloses Rendering via WeasyPrint (pango/cairo, kein Browser)."""
+    _normalize_paper_format(paper_format)
+    try:
+        from weasyprint import HTML  # lazy: Import-/Lib-Fehler klar melden
+    except Exception as exc:  # OSError (fehlende Libs) oder ImportError
+        raise RuntimeError(_WEASYPRINT_MISSING_MSG) from exc
+    # base_url, damit relative Ressourcen aufgelöst werden (Fonts liegen
+    # ohnehin bereits als absolute file:-URIs im CSS-Bundle). Seitenformat
+    # kommt aus @page in print.css.
+    base = _STATIC.resolve().as_uri() + "/"
+    return HTML(string=html, base_url=base).write_pdf()
+
+
 def render_html_pdf(ctx: PdfExportContext) -> bytes:
-    """Modern-PDF: Jinja2 + CSS, Rendering mit Playwright/Chromium."""
-    # Früh validieren: Fehlermeldung kommt so oder so vor dem Browser-Start.
-    _normalize_paper_format(ctx["paper_format"])
+    """Modern-PDF: Jinja2 + CSS. Renderer-Auswahl mit Auto-Fallback
+    (Chromium → WeasyPrint), erzwingbar über `WP_PDF_RENDERER`."""
+    # Früh validieren: Fehlermeldung kommt so oder so vor dem Rendern.
+    fmt = ctx["paper_format"]
+    _normalize_paper_format(fmt)
     _normalize_pdf_theme(ctx.get("pdf_style_theme", DEFAULT_PDF_THEME))
     _normalize_color_scheme(ctx.get("color_scheme", DEFAULT_COLOR_SCHEME))
-    html = build_week_html(ctx)
-    return _pdf_playwright(html, ctx["paper_format"])
+
+    forced = os.environ.get(_RENDERER_ENV, "").strip().lower()
+    if forced == "weasyprint":
+        return _pdf_weasyprint(build_week_html(ctx, "weasyprint"), fmt)
+    if forced == "chromium":
+        return _pdf_playwright(build_week_html(ctx, "chromium"), fmt)
+
+    # Auto: zuerst Chromium (höchste Treue), bei fehlendem Binary WeasyPrint.
+    try:
+        return _pdf_playwright(build_week_html(ctx, "chromium"), fmt)
+    except RuntimeError:
+        return _pdf_weasyprint(build_week_html(ctx, "weasyprint"), fmt)
