@@ -242,7 +242,9 @@ body {
 
 /*
  * Raster-Linien: drei Stufen als gestapelte Gradients.
- * --md-gridline-quarter-visible (1/0) schaltet die feinste Stufe per Theme.
+ * Die feinste Stufe (Viertelstunde) wird per Theme abgeschaltet, indem
+ * `--md-gridline-quarter`/`--md-gridline-quarter-overlay` auf `transparent`
+ * gesetzt wird (kein `calc()` im rgba-Alpha – das verwirft WeasyPrint sonst).
  * Die Linien liegen zusätzlich im Overlay (`.day-col-overlay`) über den
  * Kacheln, damit sie auch über farbige Blöcke durchgezeichnet werden.
  * Auf `.day-col-inner--lines/--continuous` bleibt der gleiche Gradient als
@@ -264,7 +266,7 @@ body {
     ),
     linear-gradient(
       to bottom,
-      rgba(29, 27, 32, calc(0.04 * var(--md-gridline-quarter-visible))) 0.25px,
+      var(--md-gridline-quarter) 0.25px,
       transparent 0.25px
     );
   background-repeat: repeat-y;
@@ -301,10 +303,7 @@ body {
     ),
     linear-gradient(
       to bottom,
-      rgba(
-        29, 27, 32,
-        calc(0.06 * var(--md-gridline-quarter-visible))
-      ) 0.25px,
+      var(--md-gridline-quarter-overlay) 0.25px,
       transparent 0.25px
     );
   background-repeat: repeat-y;

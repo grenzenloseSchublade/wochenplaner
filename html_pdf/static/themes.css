@@ -20,7 +20,8 @@
   --md-axis-left-bg: transparent;
   --md-axis-right-bg: transparent;
   --md-axis-right-opacity: 0.5;
-  --md-gridline-quarter-visible: 0;
+  --md-gridline-quarter: transparent;
+  --md-gridline-quarter-overlay: transparent;
   /*
    * Minimal: sichtbare Stunden-Linien sind unverzichtbar, aber sehr ruhig.
    * Keine Stunden-Bänder – das Theme lebt von weißem Raum.
@@ -47,7 +48,8 @@
   --md-axis-left-bg: var(--md-sys-color-surface-container-low);
   --md-axis-right-bg: transparent;
   --md-axis-right-opacity: 0.55;
-  --md-gridline-quarter-visible: 1;
+  --md-gridline-quarter: rgba(29, 27, 32, 0.04);
+  --md-gridline-quarter-overlay: rgba(29, 27, 32, 0.06);
   /*
    * Structured: sichtbares Raster + dezente Stunden-Bänder.
    * Die Kombination gibt dem Theme einen „Kalenderblatt"-Charakter,
@@ -75,7 +77,8 @@
   --md-axis-left-bg: var(--md-sys-color-surface-container-low);
   --md-axis-right-bg: transparent;
   --md-axis-right-opacity: 0.55;
-  --md-gridline-quarter-visible: 0;
+  --md-gridline-quarter: transparent;
+  --md-gridline-quarter-overlay: transparent;
   /*
    * Balanced: sichtbare Stundenstruktur, aber ruhiger als structured.
    * Bänder auf halber Stärke, Linien deutlich stärker als früher

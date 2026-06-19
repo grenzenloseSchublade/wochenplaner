@@ -70,11 +70,17 @@
   --md-footer-divider-color: var(--md-sys-color-outline-variant);
   --md-footer-divider-width: 0.35pt;
 
-  /* Raster-Linien: drei Stufen, per Theme (de)aktivierbar via -visible-Flag */
+  /*
+   * Raster-Linien: drei Stufen. Pro Theme (de)aktivierbar, indem die jeweilige
+   * Farbe auf `transparent` gesetzt wird. WICHTIG: kein `calc()` im Alpha-Kanal
+   * von `rgba()` verwenden – WeasyPrint kann das nicht parsen und verwirft dann
+   * die GESAMTE `background-image`-Deklaration (alle drei Linien-Layer), wodurch
+   * im modernen Layout sämtliche Zeitlinien verschwinden. Daher direkt fertige
+   * Farb-Tokens, die Themes durch `transparent` abschalten.
+   */
   --md-gridline-hour: rgba(29, 27, 32, 0.18);
   --md-gridline-half: rgba(29, 27, 32, 0.08);
   --md-gridline-quarter: rgba(29, 27, 32, 0.04);
-  --md-gridline-quarter-visible: 1;
 
   /*
    * Overlay-Varianten derselben Linien: liegen über den farbigen Kacheln.
@@ -83,6 +89,7 @@
    */
   --md-gridline-hour-overlay: rgba(29, 27, 32, 0.28);
   --md-gridline-half-overlay: rgba(29, 27, 32, 0.12);
+  --md-gridline-quarter-overlay: rgba(29, 27, 32, 0.06);
 
   /*
    * Stunden-Bänder (`.grid-bands`) über volle Breite: ungerade Stunden
