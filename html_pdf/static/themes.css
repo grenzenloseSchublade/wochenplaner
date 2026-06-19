@@ -25,6 +25,8 @@
   /* Minimal: sichtbare Stunden-Linien sind unverzichtbar, aber sehr ruhig. */
   --md-gridline-hour-overlay: rgba(29, 27, 32, 0.2);
   --md-gridline-half-overlay: rgba(29, 27, 32, 0.08);
+  /* Keine Stunden-Bänder – das Theme lebt von weißem Raum. */
+  --md-grid-band: transparent;
   --md-footer-divider-color: transparent;
 }
 

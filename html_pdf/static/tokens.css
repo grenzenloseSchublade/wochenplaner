@@ -91,6 +91,14 @@
   --md-gridline-half-overlay: rgba(29, 27, 32, 0.12);
   --md-gridline-quarter-overlay: rgba(29, 27, 32, 0.06);
 
+  /*
+   * Stunden-Zebra: jede zweite Stunde minimal getönt (Hintergrund hinter den
+   * Kacheln). Erleichtert das horizontale Ablesen über die 7 Spalten.
+   * WeasyPrint-safe – solider Tint, kein mix-blend-mode. Themes setzen den
+   * Wert auf `transparent`, um die Bänder abzuschalten.
+   */
+  --md-grid-band: rgba(29, 27, 32, 0.03);
+
   /* Tiles */
   --md-elevation-hairline: 0 0 0 0.35px rgba(29, 27, 32, 0.12);
   --md-tile-border: rgba(29, 27, 32, 0.18);
