@@ -11,6 +11,7 @@ from pdf_colors import (
     DEFAULT_COLOR_SCHEME,
     ColorScheme,
     build_color_overrides,
+    plan_mono_hue,
 )
 from utils import Activity, default_plan_title
 
@@ -38,6 +39,10 @@ class PdfExportContext(TypedDict):
     # Vorab berechnete Kachelfarben pro Aktivitätsname (leer bei "color").
     # Eine Quelle der Wahrheit für klassischen und modernen Renderer.
     color_overrides: dict[str, str]
+    # Plan-Farbton (0..1) für "monochrome": zirkulärer Mittelwert der
+    # Aktivitätsfarben (Blau-Fallback bei farblosen Plänen). Speist Kacheln
+    # *und* Chrome in beiden Renderern. Bei anderen Schemata bedeutungslos.
+    mono_hue: float
 
 
 def build_pdf_context(
@@ -72,4 +77,5 @@ def build_pdf_context(
         pdf_style_theme=pdf_style_theme,
         color_scheme=color_scheme,
         color_overrides=build_color_overrides(acts, color_scheme),
+        mono_hue=plan_mono_hue(acts),
     )

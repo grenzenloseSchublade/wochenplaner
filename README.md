@@ -38,7 +38,7 @@ Die Zeitachse ist **links prominent** mit eigenem Hintergrund, **rechts leise** 
 |--------|-------|
 | **Farbig** *(Standard)* | Originalfarben der Aktivitäten |
 | **Graustufen** | für **Schwarz-Weiß-Ausdrucke**: jede Aktivität bekommt eine eigene, klar getrennte **Graustufe** |
-| **Monochrom** | wie Graustufen, aber in **Blautönen** einer Grundfarbe |
+| **Monochrom** | wie Graustufen, aber in Tönen **einer Grundfarbe**. Der Farbton wird **aus dem Plan** abgeleitet (zirkulärer Mittelwert der Aktivitätsfarben), mit Blau-Fallback bei farblosen Plänen |
 
 Beide S/W-Schemata vergeben **distinkte Tonstufen pro Aktivität** (gleicher Name = gleicher Ton), damit Termine auf einem Schwarz-Weiß-Drucker unterscheidbar bleiben statt zu einheitlichem Grau zu verschmelzen.
 

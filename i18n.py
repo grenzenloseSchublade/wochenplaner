@@ -112,7 +112,8 @@ TRANSLATIONS: dict[Lang, dict[str, str]] = {
         "pdf_colorscheme_monochrome": "Monochrom",
         "pdf_colorscheme_hint": (
             "Farbig: Originalfarben. Graustufen/Monochrom: je Aktivität eine "
-            "eigene Tonstufe – für Schwarz-Weiß-Druck."
+            "eigene Tonstufe – für Schwarz-Weiß-Druck. Monochrom übernimmt den "
+            "mittleren Farbton deines Plans."
         ),
         "pdf_modern_failed": "Modern-PDF konnte nicht erzeugt werden.",
         "pdf_export_failed": "PDF konnte nicht erzeugt werden.",
@@ -245,7 +246,8 @@ TRANSLATIONS: dict[Lang, dict[str, str]] = {
         "pdf_colorscheme_monochrome": "Monochrome",
         "pdf_colorscheme_hint": (
             "Color: original colors. Grayscale/monochrome: one distinct tone "
-            "per activity – for black-and-white printing."
+            "per activity – for black-and-white printing. Monochrome adopts "
+            "your plan's average hue."
         ),
         "pdf_modern_failed": "Could not generate modern PDF.",
         "pdf_export_failed": "Could not generate PDF.",

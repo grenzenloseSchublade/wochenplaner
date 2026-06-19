@@ -358,10 +358,13 @@ def generate_pdf_from_context(ctx: PdfExportContext) -> bytes:
     continuous_horizontal_grid = ctx["continuous_horizontal_grid"]
     color_scheme = ctx.get("color_scheme", "color")
     color_overrides = ctx.get("color_overrides", {})
+    mono_hue = ctx.get("mono_hue")
 
     def chrome(hex_c: str) -> str:
         """Chrome-Farbe (Header, Titel, Tints) gemäß Farbschema neutralisieren."""
-        return recolor_chrome(hex_c, color_scheme)
+        if mono_hue is None:
+            return recolor_chrome(hex_c, color_scheme)
+        return recolor_chrome(hex_c, color_scheme, mono_hue)
 
     page_size = landscape(A4) if paper_format == "A4" else landscape(A5)
     page_w, page_h = page_size

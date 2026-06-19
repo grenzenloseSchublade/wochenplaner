@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from constants import PX_PER_MIN, WOCHENTAGE
 from i18n import WOCHENTAGE_KURZ_I18N, t
+from pdf_colors import mono_chrome_colors
 from pdf_context import PdfExportContext
 from pdf_export import MIN_MINUTES_FOR_NAME, minutes_to_hhmm
 from utils import (
@@ -128,6 +129,14 @@ def build_week_template_vars(ctx: PdfExportContext) -> dict:
             }
         )
 
+    # Monochrome-Chrome (Akzentlinie, Titel) folgt dem Plan-Farbton, damit es
+    # zu den Kacheln passt. Bei anderen Schemata ungenutzt (Template injiziert
+    # die Variablen nur für scheme--monochrome).
+    color_scheme = ctx.get("color_scheme", "color")
+    mono_primary, mono_tertiary = "", ""
+    if color_scheme == "monochrome":
+        mono_primary, mono_tertiary = mono_chrome_colors(ctx.get("mono_hue", 0.0))
+
     pn = ctx["plan_note"].strip()
     return {
         "title": ctx["title"],
@@ -148,5 +157,7 @@ def build_week_template_vars(ctx: PdfExportContext) -> dict:
         "continuous_horizontal_grid": ctx["continuous_horizontal_grid"],
         "paper_format": ctx["paper_format"],
         "pdf_style_theme": ctx.get("pdf_style_theme", "balanced"),
-        "color_scheme": ctx.get("color_scheme", "color"),
+        "color_scheme": color_scheme,
+        "mono_primary": mono_primary,
+        "mono_tertiary": mono_tertiary,
     }

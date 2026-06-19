@@ -8,7 +8,7 @@
 </head>
 
 <body class="page theme--{{ pdf_style_theme }} scheme--{{ color_scheme }} {% if paper_format == 'A5' %}page--a5{% endif %}"
-  style="--slot-count: {{ slot_count }}; --half-slot-count: {{ half_slot_count }}; --grid-h: {% if paper_format == 'A5' %}var(--md-grid-height-a5){% else %}var(--md-grid-height-a4){% endif %};">
+  style="--slot-count: {{ slot_count }}; --half-slot-count: {{ half_slot_count }}; --grid-h: {% if paper_format == 'A5' %}var(--md-grid-height-a5){% else %}var(--md-grid-height-a4){% endif %};{% if color_scheme == 'monochrome' and mono_primary %} --md-sys-color-primary: {{ mono_primary }}; --md-sys-color-tertiary: {{ mono_tertiary }};{% endif %}">
   <div class="sheet">
     <header class="page-header">
       <h1 class="page-title">{{ title }}</h1>

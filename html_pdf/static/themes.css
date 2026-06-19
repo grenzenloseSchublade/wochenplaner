@@ -89,6 +89,11 @@
  * Diese Regeln stehen am Ende des CSS-Bundles → überschreiben die Theme- und
  * Basis-Tokens deterministisch. Werte stammen aus recolor_chrome(), damit
  * Modern- und Klassisch-PDF denselben Ton zeigen.
+ *
+ * Hinweis monochrome: der Farbton folgt dem Plan (zirkulärer Mittelwert der
+ * Aktivitätsfarben, siehe pdf_colors.plan_mono_hue). Die Werte unten sind nur
+ * der **Blau-Fallback**; das Template injiziert pro Plan berechnete Werte
+ * inline am <body> (höhere Spezifität → gewinnt).
  */
 .scheme--grayscale {
   --md-sys-color-primary: #656565;
