@@ -8,7 +8,7 @@ Abnahme-Checkliste für Release **1.5.0** und nachfolgende Modern-PDF-Updates. A
 - [ ] Eintrag-Notizen: PDF-Annotations (Sticky) vorhanden, wo erwartet
 - [ ] Optionen: Achsenzeiten, Blockzeiten, durchgängiges Raster – sichtbar korrekt
 
-## Pfad B – Modern (HTML, Playwright / Chromium)
+## Pfad B – Modern (HTML, WeasyPrint)
 
 - [ ] PDF erzeugen; Datei beginnt mit `%PDF`
 - [ ] **Einseitigkeit**: A4 und A5, jeweils mit und ohne Plan-Notiz, ergeben genau **eine** Seite
@@ -25,7 +25,6 @@ Abnahme-Checkliste für Release **1.5.0** und nachfolgende Modern-PDF-Updates. A
 - [ ] A4: Achse rechts dezent vorhanden; A5: Achse rechts **ausgeblendet**, Raster nutzt die Breite
 - [ ] Raster-Linien: volle Stunde deutlich sichtbar, halbe Stunde schwächer; je nach Theme auch Viertelstunden
 - [ ] **Raster-Linien laufen auch über farbige Blöcke durch** (Overlay-Layer): durchgehend an gleicher Position, nicht von Kacheln verdeckt
-- [ ] **Stunden-Bänder** (structured/balanced): jede zweite Stunde minimal getönt über volle Raster-Breite (inkl. Achsen); Blockfarben bleiben erkennbar. Minimal-Theme: **keine** Bänder (bewusst ruhig).
 - [ ] Startzeit-Ecke in Kacheln: erscheint **nur** ab ~40 min Blockdauer (kürzere Blöcke zeigen nur den Titel, damit nichts klemmt)
 
 ### Themes (jeweils A4 + A5)
@@ -49,9 +48,9 @@ Abnahme-Checkliste für Release **1.5.0** und nachfolgende Modern-PDF-Updates. A
 
 ## Abhängigkeiten / Umgebung
 
-- [ ] Frische venv: `uv sync`, `uv run playwright install chromium` (für Pfad B)
-- [ ] Linux: Systemlibs für Chromium (oder Devcontainer-Image neu gebaut)
-- [ ] Bei fehlendem Chromium: sinnvolle Fehlermeldung in der App
+- [ ] Frische venv: `uv sync` (Pfad B braucht nur WeasyPrint, keinen Browser)
+- [ ] Linux: Pango/Cairo-Systemlibs vorhanden (`packages.txt` / Devcontainer-Image neu gebaut)
+- [ ] Bei fehlendem WeasyPrint/Libs: sinnvolle Fehlermeldung in der App
 
 ## Tests
 
@@ -60,7 +59,7 @@ Abnahme-Checkliste für Release **1.5.0** und nachfolgende Modern-PDF-Updates. A
 
 ## Dokumentation & Version
 
-- [ ] README: Zwei PDF-Modi, Roboto/Lizenzen, Playwright-Setup, Hinweis Achsen/Footer gelesen
+- [ ] README: Zwei PDF-Modi, Roboto/Lizenzen, WeasyPrint-Setup, Hinweis Achsen/Footer gelesen
 - [ ] `pyproject.toml` Version; Footer in der App passend zur Release-Nummer
 
 ## Randfälle (kurz)
@@ -74,10 +73,10 @@ Kurz nach größeren Modern-PDF-Änderungen abarbeiten:
 | Bereich | Prüfpunkt |
 |--------|-----------|
 | Automatisiert | `uv sync` / `uv run pytest tests/` grün |
-| Modern (Playwright) | `%PDF`, Stufen-Typo, Plan-Titel/-Notiz, Optionen Achse/Raster |
+| Modern (WeasyPrint) | `%PDF`, Stufen-Typo, Plan-Titel/-Notiz, Optionen Achse/Raster |
 | Klassisch | Keine Regression ReportLab/Annotations |
-| App | Sidebar Klassisch/Modern; verständliche Fehler bei fehlendem Chromium |
-| Devcontainer | Dockerfile enthält Systemlibs für Playwright/Chromium |
+| App | Sidebar Klassisch/Modern; verständliche Fehler bei fehlendem WeasyPrint |
+| Devcontainer | Dockerfile enthält Pango/Cairo-Systemlibs für WeasyPrint |
 
 ### Abnahmeprotokoll (manuell)
 

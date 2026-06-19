@@ -1,4 +1,4 @@
-"""Regression-Tests für html_pdf.layout – ohne Chromium-Abhängigkeit."""
+"""Regression-Tests für html_pdf.layout – ohne Renderer-Abhängigkeit."""
 
 from __future__ import annotations
 
@@ -224,36 +224,6 @@ class TestCornerThreshold(unittest.TestCase):
     def test_show_block_times_off_hides_corner(self) -> None:
         blocks = self._blocks(120, show_times=False)
         self.assertFalse(blocks[0]["show_corner"])
-
-
-class TestGridBands(unittest.TestCase):
-    """Stunden-Bänder über volle Raster-Breite."""
-
-    def _ctx(self) -> dict:
-        return build_pdf_context(
-            [],
-            paper_format="A4",
-            start_hour=6,
-            end_hour=22,
-            title="T",
-            lang="de",
-            pdf_style_theme="structured",
-        )
-
-    def test_grid_bands_div_rendered_once(self) -> None:
-        html = build_week_html(self._ctx())
-        # Genau ein Bänder-Overlay (auf .grid-wrap, volle Breite).
-        self.assertEqual(html.count('class="grid-bands"'), 1)
-
-    def test_grid_bands_tokens_in_css(self) -> None:
-        from html_pdf.render import _css_bundle_for_pdf
-
-        css = _css_bundle_for_pdf()
-        self.assertIn("--md-grid-band-strength", css)
-        self.assertIn("--md-grid-band-visible", css)
-        self.assertIn(".grid-bands", css)
-        # minimal schaltet Bänder aus
-        self.assertIn("--md-grid-band-visible: 0", css)
 
 
 class TestGridLinesOverlay(unittest.TestCase):

@@ -1,4 +1,4 @@
-"""Modern PDF-Export (HTML/CSS → Playwright/Chromium)."""
+"""Modern PDF-Export (HTML/CSS → WeasyPrint, browserlos)."""
 
 from html_pdf.render import render_html_pdf
 

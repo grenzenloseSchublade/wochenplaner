@@ -22,14 +22,9 @@
   --md-axis-right-opacity: 0.5;
   --md-gridline-quarter: transparent;
   --md-gridline-quarter-overlay: transparent;
-  /*
-   * Minimal: sichtbare Stunden-Linien sind unverzichtbar, aber sehr ruhig.
-   * Keine Stunden-Bänder – das Theme lebt von weißem Raum.
-   */
+  /* Minimal: sichtbare Stunden-Linien sind unverzichtbar, aber sehr ruhig. */
   --md-gridline-hour-overlay: rgba(29, 27, 32, 0.2);
   --md-gridline-half-overlay: rgba(29, 27, 32, 0.08);
-  --md-grid-band-strength: 0;
-  --md-grid-band-visible: 0;
   --md-footer-divider-color: transparent;
 }
 
@@ -50,15 +45,9 @@
   --md-axis-right-opacity: 0.55;
   --md-gridline-quarter: rgba(29, 27, 32, 0.04);
   --md-gridline-quarter-overlay: rgba(29, 27, 32, 0.06);
-  /*
-   * Structured: sichtbares Raster + dezente Stunden-Bänder.
-   * Die Kombination gibt dem Theme einen „Kalenderblatt"-Charakter,
-   * ohne die Blockfarben zu überschatten.
-   */
+  /* Structured: sichtbares Raster mit „Kalenderblatt"-Charakter. */
   --md-gridline-hour-overlay: rgba(29, 27, 32, 0.3);
   --md-gridline-half-overlay: rgba(29, 27, 32, 0.14);
-  --md-grid-band-strength: 0.04;
-  --md-grid-band-visible: 1;
   --md-footer-divider-color: var(--md-sys-color-outline-variant);
 }
 
@@ -81,13 +70,11 @@
   --md-gridline-quarter-overlay: transparent;
   /*
    * Balanced: sichtbare Stundenstruktur, aber ruhiger als structured.
-   * Bänder auf halber Stärke, Linien deutlich stärker als früher
-   * (sonst wirkten sie auf dem Druck „gar nicht vorhanden").
+   * Linien deutlich kräftiger gewählt (sonst wirken sie im Druck
+   * „gar nicht vorhanden").
    */
   --md-gridline-hour-overlay: rgba(29, 27, 32, 0.26);
   --md-gridline-half-overlay: rgba(29, 27, 32, 0.1);
-  --md-grid-band-strength: 0.025;
-  --md-grid-band-visible: 1;
   --md-footer-divider-color: var(--md-sys-color-outline-variant);
 }
 
@@ -109,30 +96,4 @@
 .scheme--monochrome {
   --md-sys-color-primary: #3a628f;
   --md-sys-color-tertiary: #385f8a;
-}
-
-/*
- * Renderer-spezifische Overrides für WeasyPrint (browserlos).
- *
- * `.grid-bands` (absolut positionierter Stunden-Band-Overlay) wird AUSGEBLENDET:
- * WeasyPrints CSS-Grid-Implementierung bezieht dieses absolute Kind
- * fälschlich in die Spalten-Track-Berechnung ein und bläht dadurch die feste
- * `9mm`-Achsenspalte zu einer `1fr`-Breite auf → Kopfzeile und Raster geraten
- * um eine Spalte auseinander. Ohne `.grid-bands` richtet sich das Raster exakt
- * aus. Verlust: nur der ≤4 %-Stundenband-Tint; die Stundenlinien
- * (`.day-col-overlay`) bleiben erhalten. Chromium ist unberührt (volle Treue,
- * inkl. Bänder mit `mix-blend-mode`, das WeasyPrint ohnehin nicht kann).
- */
-.render--weasyprint .grid-bands {
-  display: none;
-}
-
-/*
- * `min-height: 100vh` ist ein Browser-Viewport-Konzept; in WeasyPrint führt es
- * zu Überlauf auf eine zweite Seite. Die vertikale Geometrie des Rasters steckt
- * ohnehin in festen `--grid-h`-Höhen, daher kann die feste Mindesthöhe hier
- * entfallen, ohne das Layout zu verändern.
- */
-.render--weasyprint .sheet {
-  min-height: 0;
 }

@@ -22,12 +22,6 @@ else
 fi
 
 echo ""
-echo "Playwright Chromium (Modern-PDF) – Cache + Browser"
-sudo mkdir -p /home/vscode/.cache/ms-playwright
-sudo chown -R vscode:vscode /home/vscode/.cache/ms-playwright
-NODE_OPTIONS=--no-deprecation uv run playwright install chromium
-
-echo ""
 echo "Claude Code (npm) installieren/aktualisieren"
 if command -v npm >/dev/null 2>&1; then
     npm install -g @anthropic-ai/claude-code

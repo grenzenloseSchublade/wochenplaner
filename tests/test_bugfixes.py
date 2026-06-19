@@ -116,7 +116,7 @@ class TestWeasyPrintRenderer(unittest.TestCase):
             ctx = build_pdf_context(
                 acts, paper_format=fmt, plan_note="KW 25 – Test"
             )
-            data = _pdf_weasyprint(build_week_html(ctx, "weasyprint"), fmt)
+            data = _pdf_weasyprint(build_week_html(ctx))
             self.assertTrue(data.startswith(b"%PDF"))
             self.assertEqual(self._pages(data), 1, f"{fmt} sollte 1 Seite sein")
 

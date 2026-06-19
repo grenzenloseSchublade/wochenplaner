@@ -7,7 +7,7 @@
   <style>{{ css_bundle | safe }}</style>
 </head>
 
-<body class="page theme--{{ pdf_style_theme }} scheme--{{ color_scheme }} render--{{ pdf_renderer | default('chromium') }} {% if paper_format == 'A5' %}page--a5{% endif %}"
+<body class="page theme--{{ pdf_style_theme }} scheme--{{ color_scheme }} {% if paper_format == 'A5' %}page--a5{% endif %}"
   style="--slot-count: {{ slot_count }}; --half-slot-count: {{ half_slot_count }}; --grid-h: {% if paper_format == 'A5' %}var(--md-grid-height-a5){% else %}var(--md-grid-height-a4){% endif %};">
   <div class="sheet">
     <header class="page-header">
@@ -28,7 +28,6 @@
       </div>
 
       <div class="grid-wrap">
-        <div class="grid-bands" aria-hidden="true"></div>
         <div class="axis axis-left">
           {% if show_axis_times %}
           <div class="axis-inner">

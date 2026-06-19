@@ -1,4 +1,4 @@
-"""Smoke tests for HTML→PDF (Playwright)."""
+"""Smoke tests for HTML→PDF (WeasyPrint)."""
 
 import io
 import unittest

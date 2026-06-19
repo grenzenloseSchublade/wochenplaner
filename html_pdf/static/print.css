@@ -48,12 +48,12 @@ body {
  * eigentlichen Druckrand (Passepartout). Calendar/Header/Footer haben
  * daher keine eigenen horizontalen Margins mehr.
  * Wichtig: der `<body>` trägt die Klasse `page theme--…`, wird hier
- * aber nicht mehr layoutet – sonst doppeltes Padding + verschachteltes
- * `100vh` → zweiseitige PDFs.
+ * aber nicht mehr layoutet – sonst doppeltes Padding → zweiseitige PDFs.
+ * Die vertikale Geometrie steckt in festen `--grid-h`-Höhen; eine
+ * Mindesthöhe braucht der Seiten-Container daher nicht.
  */
 .sheet {
   width: 100%;
-  min-height: 100vh;
   padding: var(--md-page-margin-v) var(--md-page-margin-h);
 }
 
@@ -144,39 +144,6 @@ body {
   align-items: stretch;
   min-height: 0;
   background: var(--md-sys-color-surface);
-}
-
-/*
- * Stunden-Bänder über die volle Raster-Breite (inkl. beider Zeitachsen).
- * Jede zweite Stunde wird minimal getönt → gibt dem Plan eine visuelle
- * „Stunden-Rhythmik", auch auf farbigen Blöcken (mix-blend-mode: multiply).
- * Die Block-Farben bleiben dabei erkennbar, weil der Tint-Alpha niedrig
- * ist (≤ 4 %). In A4 quer reicht das aus, um beim Durchblättern den
- * Zeitverlauf sofort zu erfassen.
- *
- * Geometrie: 1 Stunde entspricht `100% / var(--slot-count)` der Höhe
- * (slot_count = end_hour − start_hour, z.B. 16 bei 6–22 Uhr).
- * Ein Band-Zyklus ist 2 Stunden lang → `200% / var(--slot-count)`.
- */
-.grid-bands {
-  position: absolute;
-  inset: 0;
-  pointer-events: none;
-  z-index: 3;
-  mix-blend-mode: multiply;
-  background-image: repeating-linear-gradient(
-    to bottom,
-    transparent 0,
-    transparent calc(100% / var(--slot-count, 16)),
-    rgba(
-      29, 27, 32,
-      calc(var(--md-grid-band-strength) * var(--md-grid-band-visible))
-    ) calc(100% / var(--slot-count, 16)),
-    rgba(
-      29, 27, 32,
-      calc(var(--md-grid-band-strength) * var(--md-grid-band-visible))
-    ) calc(200% / var(--slot-count, 16))
-  );
 }
 
 .axis {

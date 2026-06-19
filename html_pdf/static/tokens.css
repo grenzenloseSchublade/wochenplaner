@@ -91,16 +91,6 @@
   --md-gridline-half-overlay: rgba(29, 27, 32, 0.12);
   --md-gridline-quarter-overlay: rgba(29, 27, 32, 0.06);
 
-  /*
-   * Stunden-Bänder (`.grid-bands`) über volle Breite: ungerade Stunden
-   * bekommen einen minimalen Schwarz-Tint (mix-blend-mode: multiply).
-   * `--md-grid-band-strength`  = Alpha pro Theme (0 = kein Band)
-   * `--md-grid-band-visible`   = Schalter (1/0), erlaubt themes komplett
-   *                              abzuschalten, ohne den Alpha-Wert zu ändern.
-   */
-  --md-grid-band-strength: 0.035;
-  --md-grid-band-visible: 1;
-
   /* Tiles */
   --md-elevation-hairline: 0 0 0 0.35px rgba(29, 27, 32, 0.12);
   --md-tile-border: rgba(29, 27, 32, 0.18);
